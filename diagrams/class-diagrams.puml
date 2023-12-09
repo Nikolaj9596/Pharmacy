@@ -1,0 +1,89 @@
+@startuml
+' В поликлинике ведется учет посещений больными врачей.
+' Данные о каждом враче содержат Ф.И.О., специальность и стаж работы. 
+' Каждый врач может принимать множество пациентов, и каждый пациент может посещать нескольких врачей (в том числе в один и тот же день). 
+' В карточке пациента указываются его Ф.И.О., дата рождения и адрес места жительства. 
+' В результате визита врач ставит пациенту диагноз. 		          .
+'     Для удобства анализа заболеваемости диагнозы стандартизованы и подлежат единому учету. .
+' В целях анализа результатов работы поликлиники необходимо иметь возможность автоматически генерировать следующие документы: 		          .
+' • перечень специалистов (список врачей по специальностям);		          .
+' • количества визитов к врачам; 		          .
+' • количества случаев заболевания по каждому диагнозу. 	             .
+' Кроме того, необходимо иметь возможность просматривать для каждого из врачей список больных, которые посетили его за заданный период времени..	             .
+'                                                       		          .
+' - В БД предусмотреть хранение изображений (минимум в одном поле) в соответствии с тематикой курсовой работы.                                                                                                                     .
+'  - В БД должны быть реализованы хранимые процедуры и/или триггеры.	          .     
+'   - в БД должно быть занесено суммарно не менее 50 записей   
+
+class CategoryDisease{
+  + id: integer
+  + name: string
+}
+
+class Professions{
+  + id: integer
+  + name: string
+}
+
+class Disease{
+  + id: integer
+  + name: string
+  + description: string
+  + category_disease: CategoryDisease
+}
+
+class Client{
+  + id: integer
+  + first_name: string
+  + last_name: string
+  + middle_name: string
+  + date_birthday: date 
+  + addres: string
+}
+
+class Doctor {
+  + id: integer
+  + first_name: string
+  + last_name: string
+  + middle_name: string
+  + profession: Professions 
+  + date_start_work: date 
+}
+
+class Diagnosis {
+  + id: integer
+  + name: string
+  + description: string
+  + disease: Disease
+}
+
+
+class DoctorAppointment{
+  + id: integer
+  + doctor: Doctor
+  + client: Client
+  + start_date_appointment: datetime
+  + end_date_appointment: datetime
+}
+
+class ClientDiagnosis{
+  + id: integer
+  + diagnosis: Diagnosis
+  + client: Client
+  + doctor: Doctor
+  + created: datetime
+  + updated: datetime
+}
+
+
+DoctorAppointment::doctor "1"-[#red]->"1..*"Doctor::id
+DoctorAppointment::Client "1"-[#red]->"1..*"Client::id
+
+Disease::category_disease "1"-[#black]->"1..*"CategoryDisease::id
+Diagnosis::disease"1"-[#green]->"1..*"Disease::id
+Doctor::professions "1"-[#pink]->"1..*"Professions::id
+
+ClientDiagnosis::diagnosis "1"-[#blue]->"1..*"Diagnosis::id
+ClientDiagnosis::client "1"-[#blue]->"1..*"Client::id
+ClientDiagnosis::doctor "1"-[#blue]->"1..*"Doctor::id
+@enduml
