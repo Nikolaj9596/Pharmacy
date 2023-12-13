@@ -5,20 +5,30 @@ from sqlalchemy import engine_from_config, pool
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from alembic import context
-from src.models import Base
 from src.config import settings
+from src.pharmacy_app import models
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 section = config.config_ini_section
-config.set_section_option(section, "DB_USER", settings.DB_USER)
-config.set_section_option(section, "DB_HOST", settings.DB_HOST)
-config.set_section_option(section, "DB_PORT", settings.DB_PORT)
-config.set_section_option(section, "DB_NAME", settings.DB_NAME)
-config.set_section_option(section, "DB_PASS", settings.DB_PASS)
+config.set_section_option(section, 'DB_USER', settings.db_user)
+config.set_section_option(section, 'DB_HOST', settings.db_host)
+config.set_section_option(section, 'DB_PORT', str(settings.db_port))
+config.set_section_option(section, 'DB_NAME', settings.db_name)
+config.set_section_option(section, 'DB_PASS', settings.db_pass)
 
-target_metadata = Base.metadata # INFO: import form file with models
+target_metadata = [
+    models.Client.metadata,
+    # models.ClientDiagnosis.metadata,
+    # models.Doctor.metadata,
+    # models.Disease.metadata,
+    # models.Profession.metadata,
+    # models.DoctorAppointment.metadata,
+    # models.Diagnosis.metadata,
+    # models.CategoryDisease.metadata,
+    # models.DiseaseDiagnosis.metadata
+]   # INFO: import form file with models
 
 
 if config.config_file_name is not None:
@@ -26,14 +36,14 @@ if config.config_file_name is not None:
 
 
 def run_migrations_online():
-    connectable = context.config.attributes.get("connection", None)
+    connectable = context.config.attributes.get('connection', None)
     if connectable is None:
         connectable = AsyncEngine(
             engine_from_config(
                 context.config.get_section(context.config.config_ini_section),
-                prefix="sqlalchemy.",
+                prefix='sqlalchemy.',
                 poolclass=pool.NullPool,
-                future=True
+                future=True,
             )
         )
 
