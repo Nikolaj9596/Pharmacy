@@ -1,3 +1,4 @@
+__all__ = ['CategoryDisease']
 from sqlalchemy import String
 from src.models import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship

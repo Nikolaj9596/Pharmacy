@@ -1,3 +1,4 @@
+__all__ = ['Disease']
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.models import Base
@@ -10,4 +11,6 @@ class Disease(Base):
     description: Mapped[str] = mapped_column(String())
     category_disease_id: Mapped[int] = mapped_column(ForeignKey('category_disease.id'), index=True)
     category_disease: Mapped['CategoryDisease'] = relationship(back_populates='diseases')
-    diagnosis: Mapped['Diagnosis'] = relationship(back_populates='diseases')
+    diagnosis: Mapped['DiseaseDiagnosis'] = relationship(
+        back_populates='diseases', secondary='disease_diagnosis'
+    )

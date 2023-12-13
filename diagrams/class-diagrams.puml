@@ -54,7 +54,7 @@ class Diagnosis {
   + id: integer
   + name: string
   + description: string
-  + disease: Disease
+  + disease: list[Disease]
 }
 
 
@@ -80,7 +80,7 @@ DoctorAppointment::doctor "1"-[#red]->"1..*"Doctor::id
 DoctorAppointment::Client "1"-[#red]->"1..*"Client::id
 
 Disease::category_disease "1"-[#black]->"1..*"CategoryDisease::id
-Diagnosis::disease"1"-[#green]->"1..*"Disease::id
+Diagnosis::disease"1..*"-[#green]->"1..*"Disease::id
 Doctor::professions "1"-[#pink]->"1..*"Professions::id
 
 ClientDiagnosis::diagnosis "1"-[#blue]->"1..*"Diagnosis::id

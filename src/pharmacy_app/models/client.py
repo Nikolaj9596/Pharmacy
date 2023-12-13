@@ -1,3 +1,4 @@
+__all__ = ['Client',]
 from sqlalchemy import Date, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import date
@@ -12,4 +13,5 @@ class Client(Base):
     middle_name: Mapped[str] = mapped_column(String(255))
     date_birthday: Mapped[date] = mapped_column(Date())
     address: Mapped[str] = mapped_column(String(255))
-    appointments: Mapped['DoctorAppointment'] = relationship(back_populate='client')
+    appointments: Mapped['DoctorAppointment'] = relationship(back_populates='client')
+    client_diagnosis: Mapped['ClientDiagnosis'] = relationship(back_populates='client')
