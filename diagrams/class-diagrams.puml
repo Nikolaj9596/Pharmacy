@@ -20,46 +20,45 @@ class CategoryDisease{
   + name: string
 }
 
-class Professions{
+class Profession{
   + id: integer
   + name: string
 }
 
 class Disease{
-  + id: integer
+  + id: integer <<UniqueIdentifier>>
   + name: string
   + description: string
   + category_disease: CategoryDisease
 }
 
 class Client{
-  + id: integer
+  + id: integer <<UniqueIdentifier>>
   + first_name: string
   + last_name: string
   + middle_name: string
   + date_birthday: date 
-  + addres: string
+  + address: string
 }
 
 class Doctor {
-  + id: integer
+  + id: integer <<UniqueIdentifier>>
   + first_name: string
   + last_name: string
   + middle_name: string
-  + profession: Professions 
+  + profession: Profession
   + date_start_work: date 
 }
 
 class Diagnosis {
-  + id: integer
+  + id: integer <<UniqueIdentifier>>
   + name: string
   + description: string
   + disease: list[Disease]
 }
 
-
 class DoctorAppointment{
-  + id: integer
+  + id: integer <<UniqueIdentifier>>
   + doctor: Doctor
   + client: Client
   + start_date_appointment: datetime
@@ -67,7 +66,7 @@ class DoctorAppointment{
 }
 
 class ClientDiagnosis{
-  + id: integer
+  + id: integer <<UniqueIdentifier>>
   + diagnosis: Diagnosis
   + client: Client
   + doctor: Doctor
@@ -75,15 +74,14 @@ class ClientDiagnosis{
   + updated: datetime
 }
 
+DoctorAppointment *-up-> Doctor: "1" -- "0..*"
+DoctorAppointment *-up-> Client: "1" -- "0..*"
 
-DoctorAppointment::doctor "1"-[#red]->"1..*"Doctor::id
-DoctorAppointment::Client "1"-[#red]->"1..*"Client::id
+Disease *-down-> CategoryDisease: "1" -- "1..*"
+Diagnosis *-down-> Disease: "1..*" -- "1..*"
+Doctor *-right-> Profession: "1" -- "1..*"
 
-Disease::category_disease "1"-[#black]->"1..*"CategoryDisease::id
-Diagnosis::disease"1..*"-[#green]->"1..*"Disease::id
-Doctor::professions "1"-[#pink]->"1..*"Professions::id
-
-ClientDiagnosis::diagnosis "1"-[#blue]->"1..*"Diagnosis::id
-ClientDiagnosis::client "1"-[#blue]->"1..*"Client::id
-ClientDiagnosis::doctor "1"-[#blue]->"1..*"Doctor::id
+ClientDiagnosis *-down-> Diagnosis: "1" -- "1..*"
+ClientDiagnosis *-up-> Client: "1" -- "1..*"
+ClientDiagnosis *-up-> Doctor: "1" -- "1..*"
 @enduml
