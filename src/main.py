@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
-from src.exeptions import BadRequestEx, NotFoundEx
+from src.exceptions import BadRequestEx, NotFoundEx
 from src.profession_app.routs import profession_api
 from src.config import settings
 

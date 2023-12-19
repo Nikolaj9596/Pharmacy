@@ -4,7 +4,7 @@ from sqlalchemy import text
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.dependencies import QueryParams
-from src.exeptions import BadRequestEx
+from src.exceptions import BadRequestEx
 
 from src.profession_app.dtos import (
     ProfessionDataCreate,
@@ -76,12 +76,23 @@ class ProfessionRepository(IProfessionRepository):
         query_params: QueryParams,
     ) -> list[ProfessionDataDetailGet] | list:
         search = ''
-        # INFO: Search
+        order = ''
         params = {'limit': limit, 'offset': offset}
 
         if query_params.search:
             search = 'WHERE p.name LIKE :search '
             params['search'] = query_params.search
+
+        if query_params.order:
+            match query_params.order:
+                case 'created_at':
+                    order = 'ORDER BY p.created_at ASC '
+                case '-created_at':
+                    order = 'ORDER BY p.created_at DESC '
+                case 'name':
+                    order = 'ORDER BY p.name ASC '
+                case '_':
+                    pass
 
         query = (
             'SELECT p.id, p.name, p.created_at, p.updated_at, COUNT(d.id) as number_of_specialists '
@@ -89,8 +100,10 @@ class ProfessionRepository(IProfessionRepository):
             'LEFT JOIN doctor d ON p.id=d.profession_id '
             f'{search}'
             'GROUP BY p.id, p.name, p.created_at, p.updated_at '
+            f'{order}'
             'LIMIT :limit OFFSET :offset '
         )
+        print(f'{query=}')
         result = await session.execute(text(query), params)
         rows = result.fetchall()
         professions = []

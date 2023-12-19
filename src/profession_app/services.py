@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.dependencies import Paginator, QueryParams
-from src.exeptions import BadRequestEx, NotFoundEx
+from src.exceptions import BadRequestEx, NotFoundEx
 from src.profession_app.dtos import (
     ProfessionDataCreate,
     ProfessionDataDetailGet,
