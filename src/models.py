@@ -2,14 +2,15 @@ from datetime import datetime
 from sqlalchemy import text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import MetaData
+from sqlalchemy.sql.functions import now
 
 class Base(DeclarativeBase):
     id: Mapped[int] = mapped_column(primary_key=True)
     created_at: Mapped[datetime] = mapped_column(
-        default_server=text("TIMEZONE('utc', now())")
+        default=now()
     )
     updated_at: Mapped[datetime] = mapped_column(
-        default_server=text("TIMEZONE('utc', now())"),
+        default=now(),
         onupdate=datetime.utcnow,
     )
     metadata = MetaData(naming_convention={
