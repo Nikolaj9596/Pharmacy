@@ -3,12 +3,14 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
 from sqlalchemy.ext.asyncio import AsyncEngine
+from src.profession_app.models import *
+from src.client_app.models import *
+from src.diagnosis_app.models import *
+from src.doctor_app.models import *
 
 from alembic import context
 from src.config import settings
 from src.models import Base
-import os
-import sys
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

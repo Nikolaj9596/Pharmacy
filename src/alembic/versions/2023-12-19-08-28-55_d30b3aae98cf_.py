@@ -1,8 +1,8 @@
-"""init_client_models
+"""empty message
 
-Revision ID: 95b9ea791240
-Revises: 210a0736b8c8
-Create Date: 2023-12-13 21:21:00.195708
+Revision ID: d30b3aae98cf
+Revises: 
+Create Date: 2023-12-19 08:28:55.167366
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '95b9ea791240'
-down_revision: Union[str, None] = '210a0736b8c8'
+revision: str = 'd30b3aae98cf'
+down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -23,9 +23,9 @@ def upgrade() -> None:
     op.create_table('category_disease',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.Column('updated_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.PrimaryKeyConstraint('id')
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_category_disease'))
     )
     op.create_table('client',
     sa.Column('first_name', sa.String(length=255), nullable=False),
@@ -34,34 +34,35 @@ def upgrade() -> None:
     sa.Column('date_birthday', sa.Date(), nullable=False),
     sa.Column('address', sa.String(length=255), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.Column('updated_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.PrimaryKeyConstraint('id')
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_client'))
     )
     op.create_table('diagnosis',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('description', sa.String(length=1000), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.Column('updated_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.PrimaryKeyConstraint('id')
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_diagnosis'))
     )
     op.create_table('profession',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.Column('updated_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.PrimaryKeyConstraint('id')
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_profession')),
+    sa.UniqueConstraint('name', name=op.f('uq_profession_name'))
     )
     op.create_table('disease',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('description', sa.String(), nullable=False),
     sa.Column('category_disease_id', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.Column('updated_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.ForeignKeyConstraint(['category_disease_id'], ['category_disease.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['category_disease_id'], ['category_disease.id'], name=op.f('fk_disease_category_disease_id_category_disease')),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_disease'))
     )
     op.create_index(op.f('ix_disease_category_disease_id'), 'disease', ['category_disease_id'], unique=False)
     op.create_table('doctor',
@@ -71,10 +72,10 @@ def upgrade() -> None:
     sa.Column('date_start_work', sa.Date(), nullable=False),
     sa.Column('profession_id', sa.Integer(), nullable=True),
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.Column('updated_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.ForeignKeyConstraint(['profession_id'], ['profession.id'], ondelete='SET NULL'),
-    sa.PrimaryKeyConstraint('id')
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['profession_id'], ['profession.id'], name=op.f('fk_doctor_profession_id_profession'), ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_doctor'))
     )
     op.create_index(op.f('ix_doctor_profession_id'), 'doctor', ['profession_id'], unique=False)
     op.create_table('client_diagnosis',
@@ -82,12 +83,12 @@ def upgrade() -> None:
     sa.Column('client_id', sa.Integer(), nullable=False),
     sa.Column('doctor_id', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.Column('updated_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.ForeignKeyConstraint(['client_id'], ['client.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['diagnosis_id'], ['diagnosis.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['doctor_id'], ['doctor.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['client_id'], ['client.id'], name=op.f('fk_client_diagnosis_client_id_client'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['diagnosis_id'], ['diagnosis.id'], name=op.f('fk_client_diagnosis_diagnosis_id_diagnosis'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['doctor_id'], ['doctor.id'], name=op.f('fk_client_diagnosis_doctor_id_doctor'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_client_diagnosis'))
     )
     op.create_index(op.f('ix_client_diagnosis_client_id'), 'client_diagnosis', ['client_id'], unique=False)
     op.create_index(op.f('ix_client_diagnosis_diagnosis_id'), 'client_diagnosis', ['diagnosis_id'], unique=False)
@@ -96,11 +97,11 @@ def upgrade() -> None:
     sa.Column('disease_id', sa.Integer(), nullable=False),
     sa.Column('diagnosis_id', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.Column('updated_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.ForeignKeyConstraint(['diagnosis_id'], ['diagnosis.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['disease_id'], ['disease.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('disease_id', 'diagnosis_id', 'id')
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['diagnosis_id'], ['diagnosis.id'], name=op.f('fk_disease_diagnosis_diagnosis_id_diagnosis'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['disease_id'], ['disease.id'], name=op.f('fk_disease_diagnosis_disease_id_disease'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('disease_id', 'diagnosis_id', 'id', name=op.f('pk_disease_diagnosis'))
     )
     op.create_table('make_anappointment',
     sa.Column('start_date_appointment', sa.DateTime(), nullable=False),
@@ -108,11 +109,11 @@ def upgrade() -> None:
     sa.Column('doctor_id', sa.Integer(), nullable=True),
     sa.Column('client_id', sa.Integer(), nullable=True),
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.Column('updated_at', sa.DateTime(), nullable=False, default_server=sa.text("TIMEZONE('utc', now())")),
-    sa.ForeignKeyConstraint(['client_id'], ['client.id'], ondelete='SET NULl'),
-    sa.ForeignKeyConstraint(['doctor_id'], ['doctor.id'], ondelete='SET NULl'),
-    sa.PrimaryKeyConstraint('id')
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['client_id'], ['client.id'], name=op.f('fk_make_anappointment_client_id_client'), ondelete='SET NULl'),
+    sa.ForeignKeyConstraint(['doctor_id'], ['doctor.id'], name=op.f('fk_make_anappointment_doctor_id_doctor'), ondelete='SET NULl'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_make_anappointment'))
     )
     op.create_index(op.f('ix_make_anappointment_client_id'), 'make_anappointment', ['client_id'], unique=False)
     op.create_index(op.f('ix_make_anappointment_doctor_id'), 'make_anappointment', ['doctor_id'], unique=False)
