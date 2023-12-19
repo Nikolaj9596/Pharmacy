@@ -2,7 +2,7 @@ __all__ = ['Doctor', 'DoctorAppointment']
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import Date, ForeignKey, String
+from sqlalchemy import Date, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.models import Base
@@ -10,6 +10,10 @@ from src.models import Base
 
 class Doctor(Base):
     __tablename__ = 'doctor'
+
+    __table_args__ = (
+        UniqueConstraint('first_name', 'last_name', 'middle_name', name='uq_doctor_names'),
+    )
 
     first_name: Mapped[str] = mapped_column(String(50))
     last_name: Mapped[str] = mapped_column(String(50))
