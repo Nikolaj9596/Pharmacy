@@ -10,3 +10,6 @@ class ProfessionDataGet(TypedDict):
     name: str
     created_at: datetime
     updated_at: datetime
+
+class ProfessionDataDetailGet(ProfessionDataGet):
+    number_of_specialists: int
