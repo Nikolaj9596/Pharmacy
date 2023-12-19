@@ -1,6 +1,5 @@
 from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, Response
-from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.dependencies import Paginator, QueryParams, get_session
 from src.profession_app.dependencies import profession_service

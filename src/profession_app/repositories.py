@@ -103,7 +103,6 @@ class ProfessionRepository(IProfessionRepository):
             f'{order}'
             'LIMIT :limit OFFSET :offset '
         )
-        print(f'{query=}')
         result = await session.execute(text(query), params)
         rows = result.fetchall()
         professions = []

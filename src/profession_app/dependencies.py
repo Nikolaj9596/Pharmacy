@@ -1,7 +1,4 @@
-
-from typing import Type
 from src.profession_app.repositories import ProfessionRepository
-
 from src.profession_app.services import ProfessionService
 
 
