@@ -22,9 +22,7 @@ config.set_section_option(section, 'DB_PORT', str(settings.db_port))
 config.set_section_option(section, 'DB_NAME', settings.db_name)
 config.set_section_option(section, 'DB_PASS', settings.db_pass)
 
-target_metadata = [
-    Base.metadata,
-]   # INFO: import form file with models
+target_metadata = Base.metadata
 
 
 if config.config_file_name is not None:
