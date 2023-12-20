@@ -2,22 +2,21 @@ __all__ = ['Doctor', 'DoctorAppointment']
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import Date, ForeignKey, String, UniqueConstraint
+from sqlalchemy import Date, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.models import Base
+from src.models import Base, BaseUser
 
 
-class Doctor(Base):
+class Doctor(BaseUser):
     __tablename__ = 'doctor'
 
     __table_args__ = (
-        UniqueConstraint('first_name', 'last_name', 'middle_name', name='uq_doctor_names'),
+        UniqueConstraint(
+            'first_name', 'last_name', 'middle_name', name='uq_doctor_names'
+        ),
     )
 
-    first_name: Mapped[str] = mapped_column(String(50))
-    last_name: Mapped[str] = mapped_column(String(50))
-    middle_name: Mapped[str] = mapped_column(String(50))
     date_start_work: Mapped[date] = mapped_column(Date)
     profession_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey('profession.id', ondelete='SET NULL'),
@@ -27,9 +26,7 @@ class Doctor(Base):
     appointments: Mapped['DoctorAppointment'] = relationship(
         back_populates='doctor'
     )
-    client_diagnosis: Mapped['ClientDiagnosis'] = relationship(
-        back_populates='doctor'
-    )
+    diagnosis: Mapped['Diagnosis'] = relationship(back_populates='doctor')
     profession: Mapped['Profession'] = relationship(back_populates='doctors')
 
 

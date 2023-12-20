@@ -179,7 +179,7 @@ class DoctorRepository(IDoctorRepository):
     ) -> list[DoctorData] | list:
         search = ''
         order = ''
-        params = {'limit': limit, 'offset': offset}
+        params: dict[str, Any] = {'limit': limit, 'offset': offset}
 
         if query_params.search:
             search = 'WHERE d.first_name OR d.last_name OR d.middle_name LIKE :search '
@@ -188,13 +188,13 @@ class DoctorRepository(IDoctorRepository):
         if query_params.order:
             match query_params.order:
                 case 'created_at':
-                    order = 'ORDER BY p.created_at ASC '
+                    order = 'ORDER BY d.created_at ASC '
                 case '-created_at':
-                    order = 'ORDER BY p.created_at DESC '
+                    order = 'ORDER BY d.created_at DESC '
                 case 'first_name':
-                    order = 'ORDER BY p.name ASC '
+                    order = 'ORDER BY d.first_name ASC '
                 case 'last_name':
-                    order = 'ORDER BY p.name ASC '
+                    order = 'ORDER BY d.last_name ASC '
                 case '_':
                     pass
 

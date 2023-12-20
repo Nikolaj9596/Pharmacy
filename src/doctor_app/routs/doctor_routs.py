@@ -1,4 +1,3 @@
-__all__ = ['doctor_api']
 from typing import Annotated, Final, Optional
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
