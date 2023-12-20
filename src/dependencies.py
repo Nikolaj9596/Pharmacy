@@ -1,4 +1,5 @@
 import contextlib
+from datetime import datetime
 from typing import Optional
 from collections.abc import AsyncIterator
 
@@ -25,7 +26,25 @@ class Paginator:
         self.limit = limit
         self.offset = offset
 
+
 class QueryParams:
-    def __init__(self, search: Optional[str] = None, order: Optional[str] = None):
+    def __init__(
+        self, search: Optional[str] = None, order: Optional[str] = None
+    ):
         self.search = search
-        self.order = order 
+        self.order = order
+
+class QueryParamsAppointment:
+    def __init__(
+        self,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        doctor: Optional[int] = None,
+        client: Optional[int] = None,
+        order: Optional[str] = None
+    ):
+        self.start_date = start_date
+        self.end_date = end_date
+        self.doctor = doctor
+        self.client = client
+        self.order = order
