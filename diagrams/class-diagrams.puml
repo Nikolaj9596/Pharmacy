@@ -10,10 +10,14 @@
 ' • количества визитов к врачам; 		          .
 ' • количества случаев заболевания по каждому диагнозу. 	             .
 ' Кроме того, необходимо иметь возможность просматривать для каждого из врачей список больных, которые посетили его за заданный период времени..	             .
-'                                                       		          .
-' - В БД предусмотреть хранение изображений (минимум в одном поле) в соответствии с тематикой курсовой работы.                                                                                                                     .
-'  - В БД должны быть реализованы хранимые процедуры и/или триггеры.	          .     
+' - В БД предусмотреть хранение изображений (минимум в одном поле) в соответствии с тематикой курсовой работы..
+'  - В БД должны быть реализованы хранимые процедуры и/или триггеры.    
 '   - в БД должно быть занесено суммарно не менее 50 записей   
+'
+enum Status{
+  "ACTIVE",
+  "CLOSED"
+}
 
 class CategoryDisease{
   + id: integer
@@ -54,7 +58,10 @@ class Diagnosis {
   + id: integer <<UniqueIdentifier>>
   + name: string
   + description: string
+  + client: Client
+  + doctor: Doctor
   + disease: list[Disease]
+  + status: Status
 }
 
 class DoctorAppointment{
@@ -65,23 +72,15 @@ class DoctorAppointment{
   + end_date_appointment: datetime
 }
 
-class ClientDiagnosis{
-  + id: integer <<UniqueIdentifier>>
-  + diagnosis: Diagnosis
-  + client: Client
-  + doctor: Doctor
-  + created: datetime
-  + updated: datetime
-}
 
 DoctorAppointment *-up-> Doctor: "1" -- "0..*"
 DoctorAppointment *-up-> Client: "1" -- "0..*"
 
 Disease *-down-> CategoryDisease: "1" -- "1..*"
 Diagnosis *-down-> Disease: "1..*" -- "1..*"
+Diagnosis *-up-> Client: "1" -- "1..*"
+Diagnosis *-up-> Doctor: "1" -- "1..*"
+Diagnosis::status *-up-> Status
 Doctor *-right-> Profession: "1" -- "1..*"
 
-ClientDiagnosis *-down-> Diagnosis: "1" -- "1..*"
-ClientDiagnosis *-up-> Client: "1" -- "1..*"
-ClientDiagnosis *-up-> Doctor: "1" -- "1..*"
 @enduml
