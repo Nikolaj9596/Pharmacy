@@ -5,6 +5,7 @@ from src.exceptions import BadRequestEx, NotFoundEx
 from src.profession_app.routs import profession_api
 from src.doctor_app.routs import doctor_api, appointment_api
 from src.client_app.routs import client_api
+from src.diagnosis_app.routs import category_disease_api, diagnosis_api, disease_api 
 from src.config import settings
 
 app = FastAPI(debug=settings.debug, version='1.0', title='Clinic')
@@ -13,6 +14,9 @@ app.include_router(profession_api)
 app.include_router(doctor_api)
 app.include_router(appointment_api)
 app.include_router(client_api)
+app.include_router(category_disease_api)
+app.include_router(disease_api)
+app.include_router(diagnosis_api)
 
 
 @app.exception_handler(BadRequestEx)
