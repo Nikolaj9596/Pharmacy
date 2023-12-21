@@ -1,10 +1,10 @@
 __all__ = ['Diagnosis', 'DiseaseDiagnosis']
 from datetime import datetime
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from enum import Enum
 
-from src.models import Base
+from src.models import Base, str_255
 
 
 class Diagnosis(Base):
@@ -14,9 +14,9 @@ class Diagnosis(Base):
         ACTIVE = 'active'
         CLOSED = 'closed'
 
-    name: Mapped[str] = mapped_column(String(255))
+    name: Mapped[str_255]
     description: Mapped[str] = mapped_column(String(1000))
-    date_closed: Mapped[datetime]
+    date_closed: Mapped[datetime] = mapped_column(DateTime(), nullable=True)
     status: Mapped[StatusChoices] = mapped_column(default=StatusChoices.ACTIVE)
     client_id: Mapped[int] = mapped_column(
         ForeignKey('client.id', ondelete='CASCADE'), index=True
@@ -45,7 +45,7 @@ class DiseaseDiagnosis(Base):
 class CategoryDisease(Base):
     __tablename__ = 'category_disease'
 
-    name: Mapped[str] = mapped_column(String(255))
+    name: Mapped[str] = mapped_column(String(255), unique=True)
     diseases: Mapped[list['Disease']] = relationship(
         back_populates='category_disease'
     )
@@ -54,8 +54,8 @@ class CategoryDisease(Base):
 class Disease(Base):
     __tablename__ = 'disease'
 
-    name: Mapped[str] = mapped_column(String(255))
-    description: Mapped[str] = mapped_column(String())
+    name: Mapped[str] = mapped_column(String(255), unique=True)
+    description: Mapped[str] = mapped_column(String(10000))
     category_disease_id: Mapped[int] = mapped_column(
         ForeignKey('category_disease.id'), index=True
     )
