@@ -1,14 +1,27 @@
 from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from src.exceptions import BadRequestEx, NotFoundEx
 from src.profession_app.routs import profession_api
 from src.doctor_app.routs import doctor_api, appointment_api
 from src.client_app.routs import client_api
-from src.diagnosis_app.routs import category_disease_api, diagnosis_api, disease_api 
+from src.diagnosis_app.routs import (
+    category_disease_api,
+    diagnosis_api,
+    disease_api,
+)
 from src.config import settings
 
 app = FastAPI(debug=settings.debug, version='1.0', title='Clinic')
+
+if settings.debug:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=['*'],
+        allow_methods=['*'],
+        allow_headers=['*'],
+    )
 
 app.include_router(profession_api)
 app.include_router(doctor_api)

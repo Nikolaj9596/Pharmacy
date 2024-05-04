@@ -1,14 +1,18 @@
 from datetime import date, datetime
 from typing import Annotated
-from pydantic import BaseModel, validator
+from pydantic import validator
+from src.models import BaseScheme
+import pydantic
 
 from src.types import POS_INT, STR_50
 
 
-class UserInfo(BaseModel):
+class UserInfo(BaseScheme):
     first_name: Annotated[str, STR_50]
     last_name: Annotated[str, STR_50]
     middle_name: Annotated[str, STR_50]
+    avatar: pydantic.HttpUrl
+    data_birthday: date
 
 
 class DoctorCreateScheme(UserInfo):
@@ -22,7 +26,7 @@ class DoctorScheme(DoctorCreateScheme):
     updated_at: datetime
 
 
-class DoctorProfessionScheme(BaseModel):
+class DoctorProfessionScheme(BaseScheme):
     id: int
     name: str
 
@@ -31,7 +35,7 @@ class DoctorDetailScheme(DoctorScheme):
     profession: DoctorProfessionScheme
 
 
-class AppointmentCreateScheme(BaseModel):
+class AppointmentCreateScheme(BaseScheme):
     start_date_appointment: datetime
     end_date_appointment: datetime
     doctor_id: Annotated[int, POS_INT]
@@ -83,7 +87,7 @@ class AppointmentClientInfoScheme(UserInfo):
     id: int
 
 
-class AppointmentDetailScheme(BaseModel):
+class AppointmentDetailScheme(BaseScheme):
     id: int
     created_at: datetime
     updated_at: datetime

@@ -34,6 +34,7 @@ class Disease{
   + name: string
   + description: string
   + category_disease: CategoryDisease
+  + created: datetime
 }
 
 class Client{
@@ -43,6 +44,7 @@ class Client{
   + middle_name: string
   + date_birthday: date 
   + address: string
+  + created: datetime
 }
 
 class Doctor {
@@ -52,6 +54,7 @@ class Doctor {
   + middle_name: string
   + profession: Profession
   + date_start_work: date 
+  + created: datetime
 }
 
 class Diagnosis {
@@ -62,6 +65,7 @@ class Diagnosis {
   + doctor: Doctor
   + disease: list[Disease]
   + status: Status
+  + created: datetime
 }
 
 class DoctorAppointment{
@@ -70,6 +74,7 @@ class DoctorAppointment{
   + client: Client
   + start_date_appointment: datetime
   + end_date_appointment: datetime
+  + created: datetime
 }
 
 

@@ -1,11 +1,11 @@
 from datetime import date, datetime
 from typing import Annotated
-from pydantic import BaseModel
+from src.models import BaseScheme
 
 from src.types import POS_INT, STR_255, STR_50
 
 
-class ClientCreateScheme(BaseModel):
+class ClientCreateScheme(BaseScheme):
     first_name: Annotated[str, STR_50]
     last_name: Annotated[str, STR_50]
     middle_name: Annotated[str, STR_50]

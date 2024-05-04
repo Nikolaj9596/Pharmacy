@@ -1,9 +1,13 @@
 from datetime import datetime
 from typing import Annotated
+
+from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
 from sqlalchemy import String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import MetaData
 from sqlalchemy.sql.functions import now
+
 
 str_50 = Annotated[str, 50]
 str_255 = Annotated[str, 50]
@@ -40,3 +44,7 @@ class BaseUser(Base):
     first_name: Mapped[str_50]
     last_name: Mapped[str_50]
     middle_name: Mapped[str_50]
+
+
+class BaseScheme(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
