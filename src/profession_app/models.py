@@ -4,7 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.models import Base
 
 class ProfessionORM(Base):
-    __tablename__ = 'profession'
+    __tablename__ = 'professions'
 
     name: Mapped[str] = mapped_column(String(255), unique=True)
     doctors: Mapped['Doctor'] = relationship(back_populates='profession')

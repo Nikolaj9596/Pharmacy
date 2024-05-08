@@ -45,7 +45,7 @@ class DoctorService:
     async def _check_related_profession_exists(
         self, id: int, session: AsyncSession
     ) -> bool:
-        query = text('SELECT p.id FROM profession p WHERE p.id=:id')
+        query = text('SELECT p.id FROM professions p WHERE p.id=:id')
         result = await session.execute(query, {'id': id})
         row = result.first()
         if not row:
@@ -57,17 +57,17 @@ class DoctorService:
     ) -> DoctorDetailScheme:
         doctor: Optional[
             DoctorDetailData
-        ] = await self.repository.get_detail_by_id(id=id, session=session)
+        ] = await self.repository.get_by_id(id=id, session=session)
         if not doctor:
             raise NotFoundEx(detail=f'Doctor with id: {id} not found')
-        return DoctorDetailScheme(**doctor)
+        return DoctorDetailScheme.model_validate(doctor)
 
     async def get_list(
         self,
         session: AsyncSession,
         pagination: Paginator,
         query_params: QueryParams,
-    ) -> list[DoctorScheme] | list:
+    ) -> list[DoctorDetailScheme] | list:
         doctors: list[DoctorData] | list = await self.repository.get_list(
             session=session,
             limit=pagination.limit,
@@ -76,7 +76,7 @@ class DoctorService:
         )
         if not doctors:
             return doctors
-        return [DoctorScheme(**doctor) for doctor in doctors]
+        return [DoctorDetailScheme.model_validate(doctor) for doctor in doctors]
 
     async def create(
         self, session: AsyncSession, data: DoctorCreateScheme
@@ -92,7 +92,7 @@ class DoctorService:
             raise BadRequestEx(
                 detail='There is already a doctor with this first_name, last_name, middle_name'
             )
-        return DoctorScheme(**doctor)
+        return DoctorScheme.model_validate(doctor)
 
     async def update(
         self, session: AsyncSession, data: DoctorCreateScheme, id: int
@@ -111,7 +111,7 @@ class DoctorService:
             raise BadRequestEx(
                 detail='There is already a doctor with this first_name, last_name, middle_name'
             )
-        return DoctorScheme(**doctor)
+        return DoctorScheme.model_validate(doctor)
 
     async def delete(self, id: int, session: AsyncSession) -> None:
         await self._check_exists(id=id, session=session)
@@ -138,7 +138,7 @@ class AppointmentService:
     async def _check_related_doctor_exists(
         self, id: int, session: AsyncSession
     ) -> bool:
-        query = text('SELECT d.id FROM doctor d WHERE d.id=:id')
+        query = text('SELECT d.id FROM doctors d WHERE d.id=:id')
         result = await session.execute(query, {'id': id})
         row = result.first()
         if not row:
@@ -148,7 +148,7 @@ class AppointmentService:
     async def _check_related_client_exists(
         self, id: int, session: AsyncSession
     ) -> bool:
-        query = text('SELECT c.id FROM client c WHERE c.id=:id')
+        query = text('SELECT c.id FROM clients c WHERE c.id=:id')
         result = await session.execute(query, {'id': id})
         row = result.first()
         if not row:
@@ -185,7 +185,7 @@ class AppointmentService:
         ] = await self.repository.get_detail_by_id(id=id, session=session)
         if not appointment:
             raise NotFoundEx(detail=f'Appointment with id: {id} not found')
-        return AppointmentDetailScheme(**appointment)
+        return AppointmentDetailScheme.model_validate(appointment)
 
     async def get_list(
         self,
@@ -204,7 +204,7 @@ class AppointmentService:
         if not appointments:
             return appointments
         return [
-            AppointmentScheme(**appointment) for appointment in appointments
+            AppointmentScheme.model_validate(appointment) for appointment in appointments
         ]
 
     async def create(
@@ -221,7 +221,7 @@ class AppointmentService:
         appointment: AppointmentData = await self.repository.create(
             session=session, data=AppointmentDataCreate(**data.model_dump())
         )
-        return AppointmentScheme(**appointment)
+        return AppointmentScheme.model_validate(appointment)
 
     async def update(
         self, session: AsyncSession, data: AppointmentCreateScheme, id: int
@@ -239,7 +239,7 @@ class AppointmentService:
             data=AppointmentDataCreate(**data.model_dump()),
             id=id,
         )
-        return AppointmentScheme(**appointment)
+        return AppointmentScheme.model_validate(appointment)
 
     async def delete(self, id: int, session: AsyncSession) -> None:
         await self._check_exists(id=id, session=session)

@@ -12,7 +12,12 @@ class UserInfo(BaseScheme):
     last_name: Annotated[str, STR_50]
     middle_name: Annotated[str, STR_50]
     avatar: pydantic.HttpUrl
-    data_birthday: date
+    date_birthday: date
+
+
+class DoctorProfessionScheme(BaseScheme):
+    id: int
+    name: str
 
 
 class DoctorCreateScheme(UserInfo):
@@ -22,13 +27,6 @@ class DoctorCreateScheme(UserInfo):
 
 class DoctorScheme(DoctorCreateScheme):
     id: int
-    created_at: datetime
-    updated_at: datetime
-
-
-class DoctorProfessionScheme(BaseScheme):
-    id: int
-    name: str
 
 
 class DoctorDetailScheme(DoctorScheme):

@@ -53,7 +53,7 @@ class ProfessionRepository(IProfessionRepository):
     ) -> Optional[ProfessionDataGet]:
         query = text(
             'SELECT p.id, p.name, p.created_at, p.updated_at '
-            'FROM profession p  '
+            'FROM professions p  '
             'WHERE p.id=:id '
         )
         result = await session.execute(query, {'id': id})
@@ -96,8 +96,8 @@ class ProfessionRepository(IProfessionRepository):
 
         query = (
             'SELECT p.id, p.name, p.created_at, p.updated_at, COUNT(d.id) as number_of_specialists '
-            'FROM profession p  '
-            'LEFT JOIN doctor d ON p.id=d.profession_id '
+            'FROM professions p  '
+            'LEFT JOIN doctors d ON p.id=d.profession_id '
             f'{search}'
             'GROUP BY p.id, p.name, p.created_at, p.updated_at '
             f'{order}'
@@ -121,7 +121,7 @@ class ProfessionRepository(IProfessionRepository):
         return professions
 
     async def delete(self, id: int, session: AsyncSession) -> bool:
-        query = text('DELETE FROM profession WHERE id=:id')
+        query = text('DELETE FROM professions WHERE id=:id')
         await session.execute(query, {'id': id})
         await session.commit()
         return True
@@ -130,7 +130,7 @@ class ProfessionRepository(IProfessionRepository):
         self, data: ProfessionDataCreate, session: AsyncSession
     ) -> ProfessionDataGet:
         query = text(
-            'INSERT INTO profession(name, created_at, updated_at) '
+            'INSERT INTO professions(name, created_at, updated_at) '
             'VALUES(:name, now(), now()) '
             'RETURNING id, name, created_at, updated_at'
         )
@@ -148,7 +148,7 @@ class ProfessionRepository(IProfessionRepository):
         self, id: int, data: ProfessionDataCreate, session: AsyncSession
     ) -> ProfessionDataGet:
         query = text(
-            'UPDATE profession SET name=:name, updated_at=now() '
+            'UPDATE professions SET name=:name, updated_at=now() '
             'WHERE id=:id RETURNING id, name, created_at, updated_at'
         )
         result = await session.execute(query, {'id': id, **data})

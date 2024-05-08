@@ -7,7 +7,7 @@ from src.models import BaseUser, str_255
 
 
 class Client(BaseUser):
-    __tablename__ = 'client'
+    __tablename__ = 'clients'
 
     __table_args__ = (
         UniqueConstraint(

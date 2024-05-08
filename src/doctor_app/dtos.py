@@ -7,15 +7,17 @@ class DoctorDataCreate(TypedDict):
     middle_name: str
     date_start_work: date
     profession: int
+    date_birthday: date
+    avatar: str
 
-class DoctorData(DoctorDataCreate):
-    id: int 
-    created_at: datetime
-    updated_at: datetime
 
 class DoctorProfession(TypedDict):
     id: int
     name: str
+
+class DoctorData(DoctorDataCreate):
+    id: int 
+    profession: int
 
 class DoctorDetailData(DoctorData):
     profession: DoctorProfession

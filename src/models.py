@@ -7,6 +7,7 @@ from sqlalchemy import String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import MetaData
 from sqlalchemy.sql.functions import now
+import pydantic
 
 
 str_50 = Annotated[str, 50]
@@ -44,7 +45,7 @@ class BaseUser(Base):
     first_name: Mapped[str_50]
     last_name: Mapped[str_50]
     middle_name: Mapped[str_50]
-
+    avatar: Mapped[str_255]
 
 class BaseScheme(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)

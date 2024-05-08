@@ -27,12 +27,6 @@ class IDoctorRepository(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    async def get_detail_by_id(
-        self, id: int, session: AsyncSession
-    ) -> Optional[DoctorDetailData]:
-        raise NotImplementedError()
-
-    @abstractmethod
     async def get_list(
         self,
         session: AsyncSession,
@@ -102,46 +96,20 @@ class IDoctorAppointmentRepository(ABC):
 class DoctorRepository(IDoctorRepository):
     async def get_by_id(
         self, id: int, session: AsyncSession
-    ) -> Optional[DoctorData]:
-        query = text(
-            'SELECT d.id, d.first_name, d.last_name, d.middle_name, d.created_at, d.updated_at, d.date_start_work, d.profession_id '
-            'FROM doctor d  '
-            'WHERE d.id=:id '
-        )
-        result = await session.execute(query, {'id': id})
-        row = result.first()
-        if not row:
-            return None
-        (
-            id,
-            first_name,
-            last_name,
-            middle_name,
-            created_at,
-            updated_at,
-            date_start_work,
-            profession,
-        ) = row
-        return DoctorData(
-            id=id,
-            created_at=created_at,
-            updated_at=updated_at,
-            first_name=first_name,
-            last_name=last_name,
-            middle_name=middle_name,
-            date_start_work=date_start_work,
-            profession=profession,
-        )
-
-    async def get_detail_by_id(
-        self, id: int, session: AsyncSession
     ) -> Optional[DoctorDetailData]:
         query = text(
-            'SELECT d.id, d.first_name, d.last_name, d.middle_name, d.created_at, d.updated_at, d.date_start_work, p.id, p.name '
-            'FROM doctor d  '
-            'LEFT JOIN profession p ON d.profession_id=p.id '
-            'WHERE d.id=:id '
+            """
+                SELECT 
+                    d.id, d.first_name, d.last_name,
+                    d.middle_name, d.date_start_work, 
+                    d.date_birthday, d.avatar,
+                    json_build_object('name', p.name, 'id', p.id) as profession
+                FROM doctors d
+                LEFT JOIN profession p ON d.profession_id=p.id
+                WHERE d.id=:id
+            """
         )
+
         result = await session.execute(query, {'id': id})
         row = result.first()
         if not row:
@@ -151,23 +119,20 @@ class DoctorRepository(IDoctorRepository):
             first_name,
             last_name,
             middle_name,
-            created_at,
-            updated_at,
             date_start_work,
-            profession_id,
-            profession_name,
+            date_birthday,
+            avatar,
+            profession,
         ) = row
         return DoctorDetailData(
             id=id,
-            created_at=created_at,
-            updated_at=updated_at,
             date_start_work=date_start_work,
             first_name=first_name,
             last_name=last_name,
             middle_name=middle_name,
-            profession=DoctorProfession(
-                id=profession_id, name=profession_name
-            ),
+            date_birthday=date_birthday,
+            avatar=avatar,
+            profession=DoctorProfession(eval(profession)),
         )
 
     async def get_list(
@@ -199,8 +164,15 @@ class DoctorRepository(IDoctorRepository):
                     pass
 
         query = (
-            'SELECT d.id, d.first_name, d.last_name, d.middle_name, d.created_at, d.updated_at, d.date_start_work, d.profession_id '
-            'FROM doctor d  '
+            """
+            SELECT 
+                d.id, d.first_name, d.last_name,
+                d.middle_name, d.date_start_work, d.date_birthday, d.avatar,
+                json_build_object('name', p.name, 'id', p.id) as profession
+            FROM doctors d
+            LEFT JOIN professions p
+                ON d.profession_id=p.id
+            """
             f'{search}'
             f'{order}'
             'LIMIT :limit OFFSET :offset '
@@ -215,27 +187,27 @@ class DoctorRepository(IDoctorRepository):
                 first_name,
                 last_name,
                 middle_name,
-                created_at,
-                updated_at,
                 date_start_work,
+                date_birthday,
+                avatar,
                 profession,
             ) = row
             doctors.append(
                 DoctorData(
                     first_name=first_name,
                     id=id,
-                    created_at=created_at,
-                    updated_at=updated_at,
                     last_name=last_name,
                     middle_name=middle_name,
                     date_start_work=date_start_work,
+                    date_birthday=date_birthday,
+                    avatar=avatar,
                     profession=profession,
                 )
             )
         return doctors
 
     async def delete(self, id: int, session: AsyncSession) -> bool:
-        query = text('DELETE FROM doctor WHERE id=:id')
+        query = text('DELETE FROM doctors WHERE id=:id')
         await session.execute(query, {'id': id})
         await session.commit()
         return True
@@ -244,10 +216,23 @@ class DoctorRepository(IDoctorRepository):
         self, data: DoctorDataCreate, session: AsyncSession
     ) -> DoctorData:
         query = text(
-            'INSERT INTO doctor(first_name, last_name, middle_name, created_at, updated_at, date_start_work, profession_id) '
-            'VALUES(:first_name, :last_name, :middle_name, now(), now(), :date_start_work, :profession) '
-            'RETURNING id, first_name, last_name, middle_name, created_at, updated_at, date_start_work, profession_id '
+            """
+            INSERT INTO doctors(
+                first_name, last_name, middle_name,
+                created_at, updated_at, date_start_work, profession_id,
+                date_birthday, avatar
+            )
+            VALUES(
+                :first_name, :last_name, :middle_name, 
+                now(), now(), :date_start_work, :profession,
+                :date_birthday, :avatar
+            )
+            RETURNING 
+                id, first_name, last_name, middle_name, 
+                date_start_work, profession_id, date_birthday, avatar
+            """
         )
+        data['avatar'] = str(data['avatar'])
         result = await session.execute(query, dict(data))
         row = result.fetchone()
         if not row:
@@ -258,28 +243,39 @@ class DoctorRepository(IDoctorRepository):
             first_name,
             last_name,
             middle_name,
-            created_at,
-            updated_at,
             date_start_work,
             profession_id,
+            date_birthday,
+            avatar,
         ) = row
         return DoctorData(
             first_name=first_name,
             last_name=last_name,
             middle_name=middle_name,
             id=id,
-            created_at=created_at,
-            updated_at=updated_at,
             date_start_work=date_start_work,
             profession=profession_id,
+            date_birthday=date_birthday,
+            avatar=avatar,
         )
 
     async def update(
         self, id: int, data: DoctorDataCreate, session: AsyncSession
     ) -> DoctorData:
         query = text(
-            'UPDATE doctor SET first_name=:first_name, last_name=:last_name, middle_name=:middle_name, date_start_work=:date_start_work, updated_at=now(), profession_id=:profession '
-            'WHERE id=:id RETURNING id, first_name, last_name, middle_name, created_at, updated_at, date_start_work, profession_id'
+            """
+            UPDATE doctors 
+                SET first_name=:first_name,
+                    last_name=:last_name, 
+                    middle_name=:middle_name, 
+                    date_start_work=:date_start_work, 
+                    updated_at=now(),
+                    profession_id=:profession,
+                    date_birthday=:date_birthday,
+                    avatar=:avatar
+            WHERE id=:id 
+            RETURNING id, first_name, last_name, middle_name, date_start_work, profession_id, date_birthday, avatar
+            """
         )
         result = await session.execute(query, {'id': id, **data})
         row = result.fetchone()
@@ -290,10 +286,10 @@ class DoctorRepository(IDoctorRepository):
             first_name,
             last_name,
             middle_name,
-            created_at,
-            updated_at,
             date_start_work,
             profession_id,
+            date_birthday,
+            avatar,
         ) = row
         await session.commit()
         return DoctorData(
@@ -302,9 +298,9 @@ class DoctorRepository(IDoctorRepository):
             middle_name=middle_name,
             date_start_work=date_start_work,
             id=id,
-            created_at=created_at,
-            updated_at=updated_at,
             profession=profession_id,
+            date_birthday=date_birthday,
+            avatar=avatar,
         )
 
 
@@ -314,7 +310,7 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
     ) -> Optional[AppointmentData]:
         query = text(
             'SELECT m.id, m.start_date_appointment, m.end_date_appointment, m.doctor_id, m.client_id, m.created_at, m.updated_at '
-            'FROM make_anappointment m  '
+            'FROM appointments m  '
             'WHERE m.id=:id '
         )
         result = await session.execute(query, {'id': id})
@@ -348,7 +344,7 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
             'm.doctor_id, m.client_id, m.created_at, m.updated_at, '
             'd.first_name AS doctor_first_name, d.last_name AS doctor_last_name, d.middle_name AS doctor_middle_name, '
             'c.first_name AS client_first_name, c.last_name AS client_last_name, c.middle_name AS client_middle_name '
-            'FROM make_anappointment m '
+            'FROM appointments m '
             'LEFT JOIN doctor d ON m.doctor_id=d.id '
             'LEFT JOIN client c ON m.client_id=c.id '
             'WHERE m.id=:id '
@@ -435,7 +431,7 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
 
         query = (
             'SELECT m.id, m.start_date_appointment, m.end_date_appointment, m.doctor_id, m.client_id, m.created_at, m.updated_at '
-            'FROM make_anappointment m  '
+            'FROM appointments m  '
             f'{filter} '
             f'{order}'
             'LIMIT :limit OFFSET :offset '
@@ -468,7 +464,7 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
         return appointments
 
     async def delete(self, id: int, session: AsyncSession) -> bool:
-        query = text('DELETE FROM  make_anappointment WHERE id=:id')
+        query = text('DELETE FROM  appointments WHERE id=:id')
         await session.execute(query, {'id': id})
         await session.commit()
         return True
@@ -477,7 +473,7 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
         self, data: AppointmentDataCreate, session: AsyncSession
     ) -> AppointmentData:
         query = text(
-            'INSERT INTO make_anappointment(created_at, updated_at, start_date_appointment, end_date_appointment, doctor_id, client_id) '
+            'INSERT INTO appointments(created_at, updated_at, start_date_appointment, end_date_appointment, doctor_id, client_id) '
             'VALUES(now(), now(), :start_date_appointment, :end_date_appointment, :doctor_id, :client_id) '
             'RETURNING id, created_at, updated_at, start_date_appointment, end_date_appointment, doctor_id, client_id '
         )
@@ -509,7 +505,7 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
         self, id: int, data: AppointmentDataCreate, session: AsyncSession
     ) -> AppointmentData:
         query = text(
-            'UPDATE doctor SET  updated_at=now(), start_date_appointment=:start_date_appointment, end_date_appointment=:end_date_appointment, doctor_id=:doctor_id, client_id=:client_id '
+            'UPDATE appointments SET  updated_at=now(), start_date_appointment=:start_date_appointment, end_date_appointment=:end_date_appointment, doctor_id=:doctor_id, client_id=:client_id '
             'WHERE id=:id RETURNING created_at, updated_at, start_date_appointment, end_date_appointment, doctor_id, client_id '
         )
         result = await session.execute(query, {'id': id, **data})

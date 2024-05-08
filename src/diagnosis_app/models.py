@@ -19,10 +19,10 @@ class Diagnosis(Base):
     date_closed: Mapped[datetime] = mapped_column(DateTime(), nullable=True)
     status: Mapped[StatusChoices] = mapped_column(default=StatusChoices.ACTIVE)
     client_id: Mapped[int] = mapped_column(
-        ForeignKey('client.id', ondelete='CASCADE'), index=True
+        ForeignKey('clients.id', ondelete='CASCADE'), index=True
     )
     doctor_id: Mapped[int] = mapped_column(
-        ForeignKey('doctor.id', ondelete='CASCADE'), index=True
+        ForeignKey('doctors.id', ondelete='CASCADE'), index=True
     )
     diseases: Mapped['DiseaseDiagnosis'] = relationship(
         back_populates='diagnosis', secondary='disease_diagnosis'
@@ -35,7 +35,7 @@ class DiseaseDiagnosis(Base):
     __tablename__ = 'disease_diagnosis'
 
     disease_id: Mapped[int] = mapped_column(
-        ForeignKey('disease.id', ondelete='CASCADE'), primary_key=True
+        ForeignKey('diseases.id', ondelete='CASCADE'), primary_key=True
     )
     diagnosis_id: Mapped[int] = mapped_column(
         ForeignKey('diagnosis.id', ondelete='CASCADE'), primary_key=True
@@ -43,7 +43,7 @@ class DiseaseDiagnosis(Base):
 
 
 class CategoryDisease(Base):
-    __tablename__ = 'category_disease'
+    __tablename__ = 'categories_disease'
 
     name: Mapped[str] = mapped_column(String(255), unique=True)
     diseases: Mapped[list['Disease']] = relationship(
@@ -52,12 +52,12 @@ class CategoryDisease(Base):
 
 
 class Disease(Base):
-    __tablename__ = 'disease'
+    __tablename__ = 'diseases'
 
     name: Mapped[str] = mapped_column(String(255), unique=True)
     description: Mapped[str] = mapped_column(String(10000))
     category_disease_id: Mapped[int] = mapped_column(
-        ForeignKey('category_disease.id'), index=True
+        ForeignKey('categories_disease.id'), index=True
     )
     category_disease: Mapped['CategoryDisease'] = relationship(
         back_populates='diseases'

@@ -9,7 +9,7 @@ from src.models import Base, BaseUser
 
 
 class Doctor(BaseUser):
-    __tablename__ = 'doctor'
+    __tablename__ = 'doctors'
 
     __table_args__ = (
         UniqueConstraint(
@@ -18,8 +18,9 @@ class Doctor(BaseUser):
     )
 
     date_start_work: Mapped[date] = mapped_column(Date)
+    date_birthday: Mapped[date] = mapped_column(Date)
     profession_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey('profession.id', ondelete='SET NULL'),
+        ForeignKey('professions.id', ondelete='SET NULL'),
         index=True,
         nullable=True,
     )
@@ -31,15 +32,15 @@ class Doctor(BaseUser):
 
 
 class DoctorAppointment(Base):
-    __tablename__ = 'make_anappointment'
+    __tablename__ = 'appointments'
 
     start_date_appointment: Mapped[datetime]
     end_date_appointment: Mapped[datetime]
     doctor_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey('doctor.id', ondelete='SET NULl'), index=True, nullable=True
+        ForeignKey('doctors.id', ondelete='SET NULl'), index=True, nullable=True
     )
     client_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey('client.id', ondelete='SET NULl'), index=True, nullable=True
+        ForeignKey('clients.id', ondelete='SET NULl'), index=True, nullable=True
     )
     doctor: Mapped['Doctor'] = relationship(back_populates='appointments')
     client: Mapped['Client'] = relationship(back_populates='appointments')

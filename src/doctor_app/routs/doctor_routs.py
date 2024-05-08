@@ -19,8 +19,8 @@ TAG: Final[str] = 'Врач'
 @doctor_api.get(
     '/',
     tags=[TAG],
-    summary='Получить всех врачей',
-    response_model=list[DoctorScheme] | list,
+    summary='Получить список врачей',
+    response_model=list[DoctorDetailScheme] | list,
 )
 async def get_list(
     service: Annotated[DoctorService, Depends(doctor_service)],
@@ -28,7 +28,7 @@ async def get_list(
     pagination: Annotated[Paginator, Depends(Paginator)],
     query_params: Annotated[QueryParams, Depends(QueryParams)],
 ):
-    doctors: list[DoctorScheme] | list = await service.get_list(
+    doctors: list[DoctorDetailScheme] | list = await service.get_list(
         session=session, pagination=pagination, query_params=query_params
     )
     return doctors
