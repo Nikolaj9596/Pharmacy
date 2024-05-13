@@ -11,6 +11,7 @@ class ClientCreateScheme(BaseScheme):
     middle_name: Annotated[str, STR_50]
     date_birthday: date
     address: Annotated[str, STR_255]
+    avatar: str | None = None
 
 
 class ClientScheme(ClientCreateScheme):

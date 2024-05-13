@@ -7,6 +7,7 @@ class ClientCreateData(TypedDict):
     middle_name: str
     date_birthday: date
     address: str
+    avatar: str | None
 
 class ClientData(ClientCreateData):
     id: int

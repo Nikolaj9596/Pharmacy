@@ -10,9 +10,7 @@ from src.doctor_app.schemes import (
 from src.doctor_app.dependencies import doctor_service
 from src.doctor_app.services import DoctorService
 
-
 doctor_api = APIRouter(prefix='/doctors')
-
 TAG: Final[str] = 'Врач'
 
 

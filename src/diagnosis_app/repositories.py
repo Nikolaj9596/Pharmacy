@@ -245,7 +245,7 @@ class DiseaseRepository(IDiseaseRepository):
     ) -> Optional[DiseaseData]:
         query = text(
             'SELECT d.name, d.description, d.category_disease_id, d.created_at, d.updated_at '
-            'FROM disease d '
+            'FROM diseases d '
             'WHERE d.id=:id '
         )
         result = await session.execute(query, {'id': id})
@@ -294,7 +294,7 @@ class DiseaseRepository(IDiseaseRepository):
 
         query = (
             'SELECT d.id, d.name, d.description, d.category_disease_id, d.created_at, d.updated_at '
-            'FROM disease d  '
+            'FROM diseases d  '
             f'{search}'
             f'{order}'
             'LIMIT :limit OFFSET :offset '
@@ -325,7 +325,7 @@ class DiseaseRepository(IDiseaseRepository):
         return diseases
 
     async def delete(self, id: int, session: AsyncSession) -> bool:
-        query = text('DELETE FROM  disease WHERE id=:id')
+        query = text('DELETE FROM  diseases WHERE id=:id')
         await session.execute(query, {'id': id})
         await session.commit()
         return True
@@ -334,7 +334,7 @@ class DiseaseRepository(IDiseaseRepository):
         self, data: DiseaseCreateData, session: AsyncSession
     ) -> DiseaseData:
         query = text(
-            'INSERT INTO disease(name, description, category_disease_id, created_at, updated_at) '
+            'INSERT INTO diseases(name, description, category_disease_id, created_at, updated_at) '
             'VALUES(:name, :description, category_disease_id, now(), now()) '
             'RETURNING id, name, description, category_disease_id, created_at, updated_at '
         )
@@ -364,7 +364,7 @@ class DiseaseRepository(IDiseaseRepository):
         self, id: int, data: DiseaseCreateData, session: AsyncSession
     ) -> DiseaseData:
         query = text(
-            'UPDATE disease SET  updated_at=now(), name=:name, description=:description, category_disease_id=:category_disease_id '
+            'UPDATE diseases SET  updated_at=now(), name=:name, description=:description, category_disease_id=:category_disease_id '
             'WHERE id=:id RETURNING name, description, category_disease_id, created_at, updated_at '
         )
         result = await session.execute(query, {'id': id, **data})

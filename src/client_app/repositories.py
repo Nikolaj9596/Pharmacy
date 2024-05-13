@@ -1,4 +1,3 @@
-
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 from sqlalchemy import text
@@ -43,14 +42,14 @@ class IClientRepository(ABC):
     ) -> ClientData:
         raise NotImplementedError()
 
-class ClientRepository(IClientRepository):
 
+class ClientRepository(IClientRepository):
     async def get_by_id(
         self, id: int, session: AsyncSession
     ) -> Optional[ClientData]:
         query = text(
-            'SELECT c.id, c.first_name, c.last_name, c.middle_name, c.date_birthday, address, created_at, updated_at '
-            'FROM client c  '
+            'SELECT c.id, c.first_name, c.last_name, c.middle_name, c.date_birthday, c.address, c.created_at, c.updated_at, c.avatar '
+            'FROM clients c  '
             'WHERE c.id=:id'
         )
         result = await session.execute(query, {'id': id})
@@ -66,6 +65,7 @@ class ClientRepository(IClientRepository):
             address,
             created_at,
             updated_at,
+            avatar,
         ) = row
         return ClientData(
             id=id,
@@ -76,6 +76,7 @@ class ClientRepository(IClientRepository):
             address=address,
             created_at=created_at,
             updated_at=updated_at,
+            avatar=avatar,
         )
 
     async def get_list(
@@ -106,15 +107,15 @@ class ClientRepository(IClientRepository):
                 case '_':
                     pass
         query = (
-            'SELECT c.id, c.first_name, c.last_name, c.middle_name, c.date_birthday, c.address, c.created_at, c.updated_at '
-            'FROM client c  '
+            'SELECT c.id, c.first_name, c.last_name, c.middle_name, c.date_birthday, c.address, c.created_at, c.updated_at, c.avatar '
+            'FROM clients c  '
             f'{search} '
             f'{order}'
             'LIMIT :limit OFFSET :offset '
         )
         result = await session.execute(text(query), params)
         rows = result.fetchall()
-        appointments = []
+        clients = []
 
         for row in rows:
             (
@@ -126,8 +127,9 @@ class ClientRepository(IClientRepository):
                 address,
                 created_at,
                 updated_at,
+                avatar,
             ) = row
-            appointments.append(
+            clients.append(
                 ClientData(
                     id=id,
                     first_name=first_name,
@@ -137,12 +139,13 @@ class ClientRepository(IClientRepository):
                     address=address,
                     created_at=created_at,
                     updated_at=updated_at,
+                    avatar=avatar,
                 )
             )
-        return appointments
+        return clients
 
     async def delete(self, id: int, session: AsyncSession) -> bool:
-        query = text('DELETE FROM client WHERE id=:id')
+        query = text('DELETE FROM clients WHERE id=:id')
         await session.execute(query, {'id': id})
         await session.commit()
         return True
@@ -151,9 +154,9 @@ class ClientRepository(IClientRepository):
         self, data: ClientCreateData, session: AsyncSession
     ) -> ClientData:
         query = text(
-            'INSERT INTO client(first_name, last_name, middle_name, date_birthday, address, created_at, updated_at) '
-            'VALUES(:first_name, :last_name, :middle_name, :date_birthday, :address, now(), now()) '
-            'RETURNING id, first_name, last_name, middle_name, date_birthday, address, created_at, updated_at '
+            'INSERT INTO clients(first_name, last_name, middle_name, date_birthday, address, created_at, updated_at, avatar) '
+            'VALUES(:first_name, :last_name, :middle_name, :date_birthday, :address, now(), now(), :avatar) '
+            'RETURNING id, first_name, last_name, middle_name, date_birthday, address, created_at, updated_at, avatar '
         )
         result = await session.execute(query, dict(data))
         row = result.fetchone()
@@ -169,6 +172,7 @@ class ClientRepository(IClientRepository):
             address,
             created_at,
             updated_at,
+            avatar,
         ) = row
         return ClientData(
             id=id,
@@ -179,14 +183,15 @@ class ClientRepository(IClientRepository):
             address=address,
             created_at=created_at,
             updated_at=updated_at,
+            avatar=avatar,
         )
 
     async def update(
         self, id: int, data: ClientCreateData, session: AsyncSession
     ) -> ClientData:
         query = text(
-            'UPDATE client SET first_name=:first_name, last_name=:last_name, middle_name=:middle_name, date_birthday=:date_birthday, address=:address, updated_at=now() '
-            'WHERE id=:id RETURNING first_name, last_name, middle_name, date_birthday, address, created_at, updated_at '
+            'UPDATE clients SET first_name=:first_name, last_name=:last_name, middle_name=:middle_name, date_birthday=:date_birthday, address=:address, updated_at=now(), avatar=:avatar '
+            'WHERE id=:id RETURNING first_name, last_name, middle_name, date_birthday, address, created_at, updated_at, avatar '
         )
         result = await session.execute(query, {'id': id, **data})
         row = result.fetchone()
@@ -201,6 +206,7 @@ class ClientRepository(IClientRepository):
             address,
             created_at,
             updated_at,
+            avatar,
         ) = row
         return ClientData(
             id=id,
@@ -211,4 +217,5 @@ class ClientRepository(IClientRepository):
             address=address,
             created_at=created_at,
             updated_at=updated_at,
+            avatar=avatar,
         )

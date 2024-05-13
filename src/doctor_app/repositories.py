@@ -105,7 +105,7 @@ class DoctorRepository(IDoctorRepository):
                     d.date_birthday, d.avatar,
                     json_build_object('name', p.name, 'id', p.id) as profession
                 FROM doctors d
-                LEFT JOIN profession p ON d.profession_id=p.id
+                LEFT JOIN professions p ON d.profession_id=p.id
                 WHERE d.id=:id
             """
         )
@@ -132,7 +132,7 @@ class DoctorRepository(IDoctorRepository):
             middle_name=middle_name,
             date_birthday=date_birthday,
             avatar=avatar,
-            profession=DoctorProfession(eval(profession)),
+            profession=DoctorProfession(profession),
         )
 
     async def get_list(
@@ -277,6 +277,7 @@ class DoctorRepository(IDoctorRepository):
             RETURNING id, first_name, last_name, middle_name, date_start_work, profession_id, date_birthday, avatar
             """
         )
+        data['avatar'] = str(data['avatar'])
         result = await session.execute(query, {'id': id, **data})
         row = result.fetchone()
         if not row:
