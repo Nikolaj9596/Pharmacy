@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from src.dependencies import Paginator, QueryParams, get_session
 from src.diagnosis_app.dependencies import disease_service
-from src.diagnosis_app.schemes import DiseaseCreateScheme, DiseaseScheme
+from src.diagnosis_app.schemes import DiseaseCreateScheme, DiseaseResponseScheme, DiseaseScheme
 from src.diagnosis_app.services import DiseaseService
 
 
@@ -53,7 +53,7 @@ async def get_retrieve(
     '/',
     tags=[TAG],
     summary='Создать заболевание',
-    response_model=DiseaseScheme,
+    response_model=DiseaseResponseScheme,
 )
 async def create(
     service: Annotated[
@@ -69,7 +69,7 @@ async def create(
     '/{disease_id}',
     tags=[TAG],
     summary='Обновить заболевание',
-    response_model=DiseaseScheme,
+    response_model=DiseaseResponseScheme,
 )
 async def update(
     disease_id: int,

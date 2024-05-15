@@ -123,25 +123,14 @@ class CategoryDiseaseRepository(ICategoryDiseaseRepository):
         self, id: int, session: AsyncSession
     ) -> Optional[CategoryDiseaseData]:
         query = text(
-            'SELECT cd.name, cd.created_at, cd.updated_at '
-            'FROM category_disease cd  '
-            'WHERE cd.id=:id '
+            'SELECT cd.name ' 'FROM categories_disease cd  ' 'WHERE cd.id=:id '
         )
         result = await session.execute(query, {'id': id})
         row = result.first()
         if not row:
             return None
-        (
-            name,
-            created_at,
-            updated_at,
-        ) = row
-        return CategoryDiseaseData(
-            id=id,
-            name=name,
-            created_at=created_at,
-            updated_at=updated_at,
-        )
+        (name,) = row
+        return CategoryDiseaseData(id=id, name=name)
 
     async def get_list(
         self,
@@ -163,8 +152,8 @@ class CategoryDiseaseRepository(ICategoryDiseaseRepository):
                     pass
 
         query = (
-            'SELECT cd.id, cd.name, cd.created_at, cd.updated_at '
-            'FROM category_disease cd  '
+            'SELECT cd.id, cd.name '
+            'FROM categories_disease cd  '
             f'{order}'
             'LIMIT :limit OFFSET :offset '
         )
@@ -173,24 +162,12 @@ class CategoryDiseaseRepository(ICategoryDiseaseRepository):
         catalogs = []
 
         for row in rows:
-            (
-                id,
-                name,
-                created_at,
-                updated_at,
-            ) = row
-            catalogs.append(
-                CategoryDiseaseData(
-                    id=id,
-                    name=name,
-                    created_at=created_at,
-                    updated_at=updated_at,
-                )
-            )
+            (id, name) = row
+            catalogs.append(CategoryDiseaseData(id=id, name=name))
         return catalogs
 
     async def delete(self, id: int, session: AsyncSession) -> bool:
-        query = text('DELETE FROM  category_disease WHERE id=:id')
+        query = text('DELETE FROM  categories_disease WHERE id=:id')
         await session.execute(query, {'id': id})
         await session.commit()
         return True
@@ -199,44 +176,32 @@ class CategoryDiseaseRepository(ICategoryDiseaseRepository):
         self, data: CategoryDiseaseCreateData, session: AsyncSession
     ) -> CategoryDiseaseData:
         query = text(
-            'INSERT INTO category_disease(name, created_at, updated_at) '
+            'INSERT INTO categories_disease(name, created_at, updated_at) '
             'VALUES(:name, now(), now()) '
-            'RETURNING id, name, created_at, updated_at '
+            'RETURNING id, name '
         )
         result = await session.execute(query, dict(data))
         row = result.fetchone()
         if not row:
             raise BadRequestEx(detail='Failed to create a category disease')
         await session.commit()
-        (
-            id,
-            name,
-            created_at,
-            updated_at,
-        ) = row
-        return CategoryDiseaseData(
-            id=id,
-            name=name,
-            created_at=created_at,
-            updated_at=updated_at,
-        )
+        (id, name) = row
+        return CategoryDiseaseData(id=id, name=name)
 
     async def update(
         self, id: int, data: CategoryDiseaseCreateData, session: AsyncSession
     ) -> CategoryDiseaseData:
         query = text(
-            'UPDATE category_disease SET  updated_at=now(), name=:name '
-            'WHERE id=:id RETURNING created_at, updated_at, name '
+            'UPDATE categories_disease SET updated_at=now(), name=:name '
+            'WHERE id=:id RETURNING name '
         )
         result = await session.execute(query, {'id': id, **data})
         row = result.fetchone()
         if not row:
             raise BadRequestEx(detail='Failed to update a category disease')
-        (created_at, updated_at, name) = row
+        (name) = row
         await session.commit()
-        return CategoryDiseaseData(
-            id=id, created_at=created_at, updated_at=updated_at, name=name
-        )
+        return CategoryDiseaseData(id=id, name=name)
 
 
 class DiseaseRepository(IDiseaseRepository):
@@ -244,28 +209,26 @@ class DiseaseRepository(IDiseaseRepository):
         self, id: int, session: AsyncSession
     ) -> Optional[DiseaseData]:
         query = text(
-            'SELECT d.name, d.description, d.category_disease_id, d.created_at, d.updated_at '
-            'FROM diseases d '
-            'WHERE d.id=:id '
+            """
+                SELECT 
+                    d.name, d.description, 
+                    json_build_object('name', cd.name, 'id', cd.id) as category_disease
+                FROM diseases d
+                LEFT JOIN categories_disease cd ON d.category_disease_id=cd.id
+                WHERE d.id=:id
+
+            """
         )
         result = await session.execute(query, {'id': id})
         row = result.first()
         if not row:
             return None
-        (
-            name,
-            description,
-            category_disease_id,
-            created_at,
-            updated_at,
-        ) = row
+        (name, description, category_disease) = row
         return DiseaseData(
             id=id,
             name=name,
             description=description,
-            category_disease_id=category_disease_id,
-            created_at=created_at,
-            updated_at=updated_at,
+            category_disease=category_disease,
         )
 
     async def get_list(
@@ -291,10 +254,10 @@ class DiseaseRepository(IDiseaseRepository):
         if query_params.search:
             search = 'WHERE d.name LiKE :search '
             params['search'] = search
-
         query = (
-            'SELECT d.id, d.name, d.description, d.category_disease_id, d.created_at, d.updated_at '
+            "SELECT d.id, d.name as new_name, d.description, json_build_object('name', cd.name, 'id', cd.id) as category_disease "
             'FROM diseases d  '
+            'LEFT JOIN categories_disease cd ON d.category_disease_id=cd.id '
             f'{search}'
             f'{order}'
             'LIMIT :limit OFFSET :offset '
@@ -304,22 +267,13 @@ class DiseaseRepository(IDiseaseRepository):
         diseases = []
 
         for row in rows:
-            (
-                id,
-                name,
-                description,
-                category_disease_id,
-                created_at,
-                updated_at,
-            ) = row
+            (id, name, description, category_disease) = row
             diseases.append(
                 DiseaseData(
                     id=id,
                     name=name,
                     description=description,
-                    category_disease_id=category_disease_id,
-                    created_at=created_at,
-                    updated_at=updated_at,
+                    category_disease=category_disease,
                 )
             )
         return diseases
@@ -332,11 +286,11 @@ class DiseaseRepository(IDiseaseRepository):
 
     async def create(
         self, data: DiseaseCreateData, session: AsyncSession
-    ) -> DiseaseData:
+    ) -> dict[str, Any]:
         query = text(
             'INSERT INTO diseases(name, description, category_disease_id, created_at, updated_at) '
-            'VALUES(:name, :description, category_disease_id, now(), now()) '
-            'RETURNING id, name, description, category_disease_id, created_at, updated_at '
+            'VALUES(:name, :description, :category_disease, now(), now()) '
+            'RETURNING id, name, description, category_disease_id'
         )
         result = await session.execute(query, dict(data))
         row = result.fetchone()
@@ -347,25 +301,21 @@ class DiseaseRepository(IDiseaseRepository):
             id,
             name,
             description,
-            category_disease_id,
-            created_at,
-            updated_at,
+            category_disease,
         ) = row
-        return DiseaseData(
+        return dict(
             id=id,
             name=name,
             description=description,
-            category_disease_id=category_disease_id,
-            created_at=created_at,
-            updated_at=updated_at,
+            category_disease=category_disease,
         )
 
     async def update(
         self, id: int, data: DiseaseCreateData, session: AsyncSession
-    ) -> DiseaseData:
+    ) -> dict[str, Any]:
         query = text(
-            'UPDATE diseases SET  updated_at=now(), name=:name, description=:description, category_disease_id=:category_disease_id '
-            'WHERE id=:id RETURNING name, description, category_disease_id, created_at, updated_at '
+            'UPDATE diseases SET  updated_at=now(), name=:name, description=:description, category_disease_id=:category_disease '
+            'WHERE id=:id RETURNING name, description, category_disease_id '
         )
         result = await session.execute(query, {'id': id, **data})
         row = result.fetchone()
@@ -374,18 +324,14 @@ class DiseaseRepository(IDiseaseRepository):
         (
             name,
             description,
-            category_disease_id,
-            created_at,
-            updated_at,
+            category_disease,
         ) = row
         await session.commit()
-        return DiseaseData(
+        return dict(
             id=id,
             name=name,
             description=description,
-            category_disease_id=category_disease_id,
-            created_at=created_at,
-            updated_at=updated_at,
+            category_disease=category_disease,
         )
 
 
@@ -394,7 +340,7 @@ class DiagnosisRepository(IDiagnosisRepository):
         self, id: int, session: AsyncSession
     ) -> Optional[DiagnosisData]:
         query = text(
-            'SELECT d.name, d.description, d.date_closed, d.status, d.client_id, d.doctor_id, d.created_at, d.updated_at '
+            'SELECT d.name, d.description, d.date_closed, d.status, d.client_id, d.doctor_id '
             'FROM diagnosis d '
             'WHERE d.id=:id '
         )
@@ -402,16 +348,7 @@ class DiagnosisRepository(IDiagnosisRepository):
         row = result.first()
         if not row:
             return None
-        (
-            name,
-            description,
-            date_closed,
-            status,
-            client_id,
-            doctor_id,
-            created_at,
-            updated_at,
-        ) = row
+        (name, description, date_closed, status, client_id, doctor_id) = row
         return DiagnosisData(
             id=id,
             name=name,
@@ -420,8 +357,6 @@ class DiagnosisRepository(IDiagnosisRepository):
             status=status,
             client_id=client_id,
             doctor_id=doctor_id,
-            created_at=created_at,
-            updated_at=updated_at,
         )
 
     async def get_list(
@@ -449,7 +384,7 @@ class DiagnosisRepository(IDiagnosisRepository):
             params['search'] = search
 
         query = (
-            'SELECT d.id, d.name, d.description, d.date_closed, d.status, d.client_id, d.doctor_id, d.created_at, d.updated_at '
+            'SELECT d.id, d.name, d.description, d.date_closed, d.status, d.client_id, d.doctor_id '
             'FROM diagnosis d  '
             f'{search}'
             f'{order}'
@@ -468,8 +403,6 @@ class DiagnosisRepository(IDiagnosisRepository):
                 status,
                 client_id,
                 doctor_id,
-                created_at,
-                updated_at,
             ) = row
             diagnosis.append(
                 DiagnosisData(
@@ -480,8 +413,6 @@ class DiagnosisRepository(IDiagnosisRepository):
                     status=status,
                     client_id=client_id,
                     doctor_id=doctor_id,
-                    created_at=created_at,
-                    updated_at=updated_at,
                 )
             )
         return diagnosis
@@ -498,7 +429,7 @@ class DiagnosisRepository(IDiagnosisRepository):
         query = text(
             'INSERT INTO diagnosis(name, description, date_closed, status, client_id, doctor_id, created_at, updated_at) '
             'VALUES(:name, :description, :date_closed, :status, :client_id, :doctor_id, now(), now()) '
-            'RETURNING id, name, description, date_closed, status, client_id, doctor_id, created_at, updated_at '
+            'RETURNING id, name, description, date_closed, status, client_id, doctor_id '
         )
         result = await session.execute(query, dict(data))
         row = result.fetchone()
@@ -513,8 +444,6 @@ class DiagnosisRepository(IDiagnosisRepository):
             status,
             client_id,
             doctor_id,
-            created_at,
-            updated_at,
         ) = row
         return DiagnosisData(
             id=id,
@@ -524,8 +453,6 @@ class DiagnosisRepository(IDiagnosisRepository):
             status=status,
             client_id=client_id,
             doctor_id=doctor_id,
-            created_at=created_at,
-            updated_at=updated_at,
         )
 
     async def update(
@@ -533,22 +460,13 @@ class DiagnosisRepository(IDiagnosisRepository):
     ) -> DiagnosisData:
         query = text(
             'UPDATE diagnosis SET  updated_at=now(), name=:name, description=:description, date_closed=:date_closed, status=:status, client_id=:client_id, doctor_id=:doctor_id '
-            'WHERE id=:id RETURNING name, description, date_closed, status, client_id, doctor_id, created_at, updated_at '
+            'WHERE id=:id RETURNING name, description, date_closed, status, client_id, doctor_id '
         )
         result = await session.execute(query, {'id': id, **data})
         row = result.fetchone()
         if not row:
             raise BadRequestEx(detail='Failed to update a diagnosis')
-        (
-            name,
-            description,
-            date_closed,
-            status,
-            client_id,
-            doctor_id,
-            created_at,
-            updated_at,
-        ) = row
+        (name, description, date_closed, status, client_id, doctor_id) = row
         await session.commit()
         return DiagnosisData(
             id=id,
@@ -558,6 +476,4 @@ class DiagnosisRepository(IDiagnosisRepository):
             status=status,
             client_id=client_id,
             doctor_id=doctor_id,
-            created_at=created_at,
-            updated_at=updated_at,
         )

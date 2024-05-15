@@ -2,7 +2,13 @@ from typing import Optional
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from src.dependencies import Paginator, QueryParams
-from src.diagnosis_app.dtos import CategoryDiseaseData, DiagnosisCreateData, DiagnosisData, DiseaseCreateData, DiseaseData
+from src.diagnosis_app.dtos import (
+    CategoryDiseaseData,
+    DiagnosisCreateData,
+    DiagnosisData,
+    DiseaseCreateData,
+    DiseaseData,
+)
 from src.diagnosis_app.repositories import (
     ICategoryDiseaseRepository,
     IDiagnosisRepository,
@@ -14,6 +20,7 @@ from src.diagnosis_app.schemes import (
     DiagnosisCreateScheme,
     DiagnosisScheme,
     DiseaseCreateScheme,
+    DiseaseResponseScheme,
     DiseaseScheme,
 )
 from src.exceptions import BadRequestEx, NotFoundEx
@@ -108,11 +115,13 @@ class DiseaseService:
         self, id: int, session: AsyncSession
     ) -> bool:
 
-        query = text('SELECT cd.id FROM category_disease cd WHERE cd.id=:id')
+        query = text('SELECT cd.id FROM categories_disease cd WHERE cd.id=:id')
         result = await session.execute(query, {'id': id})
         row = result.first()
         if not row:
-            raise NotFoundEx(detail=f'Category Disease with id: {id} not found')
+            raise NotFoundEx(
+                detail=f'Category Disease with id: {id} not found'
+            )
         return True
 
     async def get_by_id(self, id: int, session: AsyncSession) -> DiseaseScheme:
@@ -137,28 +146,32 @@ class DiseaseService:
         )
         if not diseases:
             return diseases
-        return [DiseaseScheme(**disease) for disease in diseases]
+        return [DiseaseScheme.model_validate(disease) for disease in diseases]
 
     async def create(
         self, session: AsyncSession, data: DiseaseCreateScheme
     ) -> DiseaseScheme:
-        await self._check_category_exists(id=data.category_disease_id, session=session)
+        await self._check_category_exists(
+            id=data.category_disease, session=session
+        )
         disease: DiseaseData = await self.repository.create(
             session=session, data=DiseaseCreateData(**data.model_dump())
         )
-        return DiseaseScheme(**disease)
+        return DiseaseResponseScheme.model_validate(disease)
 
     async def update(
         self, session: AsyncSession, data: DiseaseCreateScheme, id: int
     ) -> DiseaseScheme:
         await self._check_exists(id=id, session=session)
-        await self._check_category_exists(id=data.category_disease_id, session=session)
+        await self._check_category_exists(
+            id=data.category_disease, session=session
+        )
         disease = await self.repository.update(
             session=session,
             data=DiseaseCreateData(**data.model_dump()),
             id=id,
         )
-        return DiseaseScheme(**disease)
+        return DiseaseResponseScheme.model_validate(disease)
 
     async def delete(self, id: int, session: AsyncSession) -> None:
         await self._check_exists(id=id, session=session)
@@ -204,7 +217,9 @@ class DiagnosisService:
             raise NotFoundEx(detail=f'Doctor with id: {id} not found')
         return True
 
-    async def get_by_id(self, id: int, session: AsyncSession) -> DiagnosisScheme:
+    async def get_by_id(
+        self, id: int, session: AsyncSession
+    ) -> DiagnosisScheme:
         diagnosis: Optional[DiagnosisData] = await self.repository.get_by_id(
             id=id, session=session
         )
@@ -226,17 +241,17 @@ class DiagnosisService:
         )
         if not diagnosis:
             return diagnosis
-        return [DiagnosisScheme(**d) for d in diagnosis]
+        return [DiagnosisScheme.model_validate(d) for d in diagnosis]
 
     async def create(
-        self, session: AsyncSession, data: DiagnosisCreateScheme 
+        self, session: AsyncSession, data: DiagnosisCreateScheme
     ) -> DiagnosisScheme:
         await self._check_client_exists(id=data.client_id, session=session)
         await self._check_doctor_exists(id=data.doctor_id, session=session)
         diagnosis: DiagnosisData = await self.repository.create(
             session=session, data=DiagnosisCreateData(**data.model_dump())
         )
-        return DiagnosisScheme(**diagnosis)
+        return DiagnosisScheme.model_validate(diagnosis)
 
     async def update(
         self, session: AsyncSession, data: DiagnosisCreateScheme, id: int
@@ -249,7 +264,7 @@ class DiagnosisService:
             data=DiagnosisCreateData(**data.model_dump()),
             id=id,
         )
-        return DiagnosisScheme(**diagnosis)
+        return DiagnosisScheme.model_validate(diagnosis)
 
     async def delete(self, id: int, session: AsyncSession) -> None:
         await self._check_exists(id=id, session=session)

@@ -12,20 +12,20 @@ class CategoryDiseaseCreateScheme(BaseScheme):
 
 class CategoryDiseaseScheme(CategoryDiseaseCreateScheme):
     id: int
-    created_at: datetime
-    updated_at: datetime
 
 
 class DiseaseCreateScheme(BaseScheme):
     name: Annotated[str, STR_255]
     description: Optional[str]
-    category_disease_id: int
+    category_disease: int
 
+
+class DiseaseResponseScheme(DiseaseCreateScheme):
+    id: int
 
 class DiseaseScheme(DiseaseCreateScheme):
     id: int
-    created_at: datetime
-    updated_at: datetime
+    category_disease: CategoryDiseaseScheme
 
 
 class DiagnosisCreateScheme(BaseScheme):
@@ -39,5 +39,3 @@ class DiagnosisCreateScheme(BaseScheme):
 
 class DiagnosisScheme(DiagnosisCreateScheme):
     id: int
-    created_at: datetime
-    updated_at: datetime
