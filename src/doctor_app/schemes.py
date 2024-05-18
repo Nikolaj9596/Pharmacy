@@ -36,8 +36,8 @@ class DoctorDetailScheme(DoctorScheme):
 class AppointmentCreateScheme(BaseScheme):
     start_date_appointment: datetime
     end_date_appointment: datetime
-    doctor_id: Annotated[int, POS_INT]
-    client_id: Annotated[int, POS_INT]
+    doctor: Annotated[int, POS_INT]
+    client: Annotated[int, POS_INT]
 
     @validator('start_date_appointment')
     def validate_start_date(cls, value, values):
@@ -71,25 +71,25 @@ class AppointmentCreateScheme(BaseScheme):
         return value
 
 
-class AppointmentScheme(AppointmentCreateScheme):
-    id: int
-    created_at: datetime
-    updated_at: datetime
-
-
 class AppointmentDoctorInfoScheme(UserInfo):
     id: int
+    first_name: str
+    last_name: str
+    middle_name: str
+    avatar: str
 
 
 class AppointmentClientInfoScheme(UserInfo):
     id: int
+    first_name: str
+    last_name: str
+    middle_name: str
+    avatar: str
 
 
-class AppointmentDetailScheme(BaseScheme):
+class AppointmentScheme(AppointmentCreateScheme):
     id: int
     created_at: datetime
     updated_at: datetime
-    start_date_appointment: datetime
-    end_date_appointment: datetime
     doctor: AppointmentDoctorInfoScheme
     client: AppointmentClientInfoScheme

@@ -7,9 +7,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from src.doctor_app.dtos import (
     AppointmentData,
     AppointmentDataCreate,
-    AppointmentDetailData,
-    ClientAppointmentInfo,
-    DoctorAppointmentInfo,
+    AppointmentResponse,
     DoctorData,
     DoctorDataCreate,
     DoctorDetailData,
@@ -63,7 +61,7 @@ class IDoctorAppointmentRepository(ABC):
     @abstractmethod
     async def get_detail_by_id(
         self, id: int, session: AsyncSession
-    ) -> Optional[AppointmentDetailData]:
+    ) -> Optional[AppointmentData]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -308,7 +306,7 @@ class DoctorRepository(IDoctorRepository):
 class DoctorAppointmentRepository(IDoctorAppointmentRepository):
     async def get_by_id(
         self, id: int, session: AsyncSession
-    ) -> Optional[AppointmentData]:
+    ) -> Optional[AppointmentResponse]:
         query = text(
             'SELECT m.id, m.start_date_appointment, m.end_date_appointment, m.doctor_id, m.client_id, m.created_at, m.updated_at '
             'FROM appointments m  '
@@ -327,28 +325,31 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
             created_at,
             updated_at,
         ) = row
-        return AppointmentData(
+        return AppointmentResponse(
             id=id,
             created_at=created_at,
             updated_at=updated_at,
             start_date_appointment=start_date_appointment,
             end_date_appointment=end_date_appointment,
-            doctor_id=doctor_id,
-            client_id=client_id,
+            doctor=doctor_id,
+            client=client_id,
         )
 
     async def get_detail_by_id(
         self, id: int, session: AsyncSession
-    ) -> Optional[AppointmentDetailData]:
+    ) -> Optional[AppointmentData]:
         query = text(
-            'SELECT m.id, m.start_date_appointment, m.end_date_appointment, '
-            'm.doctor_id, m.client_id, m.created_at, m.updated_at, '
-            'd.first_name AS doctor_first_name, d.last_name AS doctor_last_name, d.middle_name AS doctor_middle_name, '
-            'c.first_name AS client_first_name, c.last_name AS client_last_name, c.middle_name AS client_middle_name '
-            'FROM appointments m '
-            'LEFT JOIN doctor d ON m.doctor_id=d.id '
-            'LEFT JOIN client c ON m.client_id=c.id '
-            'WHERE m.id=:id '
+            """
+            SELECT 
+                m.id, m.start_date_appointment, m.end_date_appointment, 
+                json_build_object('first_name', c.first_name, 'id', c.id, 'last_name', c.last_name, 'middle_name', c.middle_name, 'avatar', c.avatar) as client,
+                json_build_object('first_name', d.first_name, 'id', d.id, 'last_name', d.last_name, 'middle_name', d.middle_name, 'avatar', c.avatar) as doctor,
+                m.created_at, m.updated_at
+            FROM appointments m
+            INNER JOIN doctors d ON m.doctor_id = d.id
+            INNER JOIN clients c ON m.client_id = c.id
+            WHERE m.id=:id;
+            """
         )
         result = await session.execute(query, {'id': id})
         row = result.first()
@@ -358,35 +359,19 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
             id,
             start_date_appointment,
             end_date_appointment,
-            doctor_id,
-            client_id,
+            doctor,
+            client,
             created_at,
             updated_at,
-            d_first_name,
-            d_last_name,
-            d_middle_name,
-            c_first_name,
-            c_last_name,
-            c_middle_name,
         ) = row
-        return AppointmentDetailData(
+        return AppointmentData(
             id=id,
             created_at=created_at,
             updated_at=updated_at,
             start_date_appointment=start_date_appointment,
             end_date_appointment=end_date_appointment,
-            doctor=DoctorAppointmentInfo(
-                id=doctor_id,
-                first_name=d_first_name,
-                last_name=d_last_name,
-                middle_name=d_middle_name,
-            ),
-            client=ClientAppointmentInfo(
-                id=client_id,
-                first_name=c_first_name,
-                last_name=c_last_name,
-                middle_name=c_middle_name,
-            ),
+            doctor=doctor,
+            client=client
         )
 
     async def get_list(
@@ -431,8 +416,16 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
             params['client_id'] = query_params.client
 
         query = (
-            'SELECT m.id, m.start_date_appointment, m.end_date_appointment, m.doctor_id, m.client_id, m.created_at, m.updated_at '
-            'FROM appointments m  '
+            """
+            SELECT 
+                m.id, m.start_date_appointment, m.end_date_appointment, 
+                json_build_object('first_name', c.first_name, 'id', c.id, 'last_name', c.last_name, 'middle_name', c.middle_name, 'avatar', c.avatar) as client,
+                json_build_object('first_name', d.first_name, 'id', d.id, 'last_name', d.last_name, 'middle_name', d.middle_name, 'avatar', c.avatar) as doctor,
+                m.created_at, m.updated_at
+            FROM appointments m
+            INNER JOIN doctors d ON m.doctor_id = d.id
+            INNER JOIN clients c ON m.client_id = c.id
+            """
             f'{filter} '
             f'{order}'
             'LIMIT :limit OFFSET :offset '
@@ -446,8 +439,8 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
                 id,
                 start_date_appointment,
                 end_date_appointment,
-                doctor_id,
-                client_id,
+                doctor,
+                client,
                 created_at,
                 updated_at,
             ) = row
@@ -458,8 +451,8 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
                     updated_at=updated_at,
                     start_date_appointment=start_date_appointment,
                     end_date_appointment=end_date_appointment,
-                    doctor_id=doctor_id,
-                    client_id=client_id,
+                    doctor=doctor,
+                    client=client,
                 )
             )
         return appointments
@@ -472,16 +465,16 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
 
     async def create(
         self, data: AppointmentDataCreate, session: AsyncSession
-    ) -> AppointmentData:
+    ) -> AppointmentResponse:
         query = text(
             'INSERT INTO appointments(created_at, updated_at, start_date_appointment, end_date_appointment, doctor_id, client_id) '
-            'VALUES(now(), now(), :start_date_appointment, :end_date_appointment, :doctor_id, :client_id) '
+            'VALUES(now(), now(), :start_date_appointment, :end_date_appointment, :doctor, :client) '
             'RETURNING id, created_at, updated_at, start_date_appointment, end_date_appointment, doctor_id, client_id '
         )
         result = await session.execute(query, dict(data))
         row = result.fetchone()
         if not row:
-            raise BadRequestEx(detail='Failed to create a profession')
+            raise BadRequestEx(detail='Failed to create a appointment')
         await session.commit()
         (
             id,
@@ -492,27 +485,27 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
             doctor_id,
             client_id,
         ) = row
-        return AppointmentData(
+        return AppointmentResponse(
             id=id,
             created_at=created_at,
             updated_at=updated_at,
             start_date_appointment=start_date_appointment,
             end_date_appointment=end_date_appointment,
-            doctor_id=doctor_id,
-            client_id=client_id,
+            doctor=doctor_id,
+            client=client_id,
         )
 
     async def update(
         self, id: int, data: AppointmentDataCreate, session: AsyncSession
-    ) -> AppointmentData:
+    ) -> AppointmentResponse:
         query = text(
-            'UPDATE appointments SET  updated_at=now(), start_date_appointment=:start_date_appointment, end_date_appointment=:end_date_appointment, doctor_id=:doctor_id, client_id=:client_id '
+            'UPDATE appointments SET  updated_at=now(), start_date_appointment=:start_date_appointment, end_date_appointment=:end_date_appointment, doctor_id=:doctor, client_id=:client '
             'WHERE id=:id RETURNING created_at, updated_at, start_date_appointment, end_date_appointment, doctor_id, client_id '
         )
         result = await session.execute(query, {'id': id, **data})
         row = result.fetchone()
         if not row:
-            raise BadRequestEx(detail='Failed to update a profession')
+            raise BadRequestEx(detail='Failed to update a appointment')
         (
             created_at,
             updated_at,
@@ -522,12 +515,12 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
             client_id,
         ) = row
         await session.commit()
-        return AppointmentData(
+        return AppointmentResponse(
             id=id,
             created_at=created_at,
             updated_at=updated_at,
             start_date_appointment=start_date_appointment,
             end_date_appointment=end_date_appointment,
-            doctor_id=doctor_id,
-            client_id=client_id,
+            doctor=doctor_id,
+            client=client_id,
         )

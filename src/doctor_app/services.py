@@ -8,7 +8,6 @@ from src.dependencies import Paginator, QueryParams, QueryParamsAppointment
 from src.doctor_app.dtos import (
     AppointmentData,
     AppointmentDataCreate,
-    AppointmentDetailData,
     DoctorData,
     DoctorDataCreate,
     DoctorDetailData,
@@ -19,7 +18,6 @@ from src.doctor_app.repositories import (
 )
 from src.doctor_app.schemes import (
     AppointmentCreateScheme,
-    AppointmentDetailScheme,
     AppointmentScheme,
     DoctorCreateScheme,
     DoctorDetailScheme,
@@ -179,13 +177,13 @@ class AppointmentService:
 
     async def get_by_id(
         self, id: int, session: AsyncSession
-    ) -> AppointmentDetailScheme:
+    ) -> AppointmentScheme:
         appointment: Optional[
-            AppointmentDetailData
+            AppointmentData
         ] = await self.repository.get_detail_by_id(id=id, session=session)
         if not appointment:
             raise NotFoundEx(detail=f'Appointment with id: {id} not found')
-        return AppointmentDetailScheme.model_validate(appointment)
+        return AppointmentScheme.model_validate(appointment)
 
     async def get_list(
         self,
@@ -211,10 +209,10 @@ class AppointmentService:
         self, session: AsyncSession, data: AppointmentCreateScheme
     ) -> AppointmentScheme:
         await self._check_related_doctor_exists(
-            id=data.doctor_id, session=session
+            id=data.doctor, session=session
         )
         await self._check_related_client_exists(
-            id=data.client_id, session=session
+            id=data.client, session=session
         )
         await self._check_doctor_is_busy(session=session, data=data)
 
@@ -228,10 +226,10 @@ class AppointmentService:
     ) -> AppointmentScheme:
         await self._check_exists(id=id, session=session)
         await self._check_related_doctor_exists(
-            id=data.doctor_id, session=session
+            id=data.doctor, session=session
         )
         await self._check_related_client_exists(
-            id=data.client_id, session=session
+            id=data.client, session=session
         )
         await self._check_doctor_is_busy(session=session, data=data)
         appointment = await self.repository.update(

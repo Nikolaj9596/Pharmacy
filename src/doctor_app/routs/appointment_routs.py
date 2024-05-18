@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.dependencies import Paginator, get_session, QueryParamsAppointment
 from src.doctor_app.schemes import (
     AppointmentCreateScheme,
-    AppointmentDetailScheme,
     AppointmentScheme,
 )
 from src.doctor_app.dependencies import (
@@ -44,14 +43,14 @@ async def get_list(
     '/{appointment_id}',
     tags=[TAG],
     summary='Получить информацию о записи на прием',
-    response_model=AppointmentDetailScheme,
+    response_model=AppointmentScheme,
 )
 async def get_retrieve(
     appointment_id: int,
     service: Annotated[AppointmentService, Depends(appointment_service)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ):
-    appointment: AppointmentDetailScheme = await service.get_by_id(
+    appointment: AppointmentScheme = await service.get_by_id(
         id=appointment_id, session=session
     )
     return appointment
