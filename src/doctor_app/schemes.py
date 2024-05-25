@@ -1,6 +1,5 @@
 from datetime import date, datetime
 from typing import Annotated
-from pydantic import validator
 from src.models import BaseScheme
 import pydantic
 
@@ -12,7 +11,7 @@ class UserInfo(BaseScheme):
     last_name: Annotated[str, STR_50]
     middle_name: Annotated[str, STR_50]
     avatar: pydantic.HttpUrl
-    date_birthday: date
+    date_birthday: date | None = None
 
 
 class DoctorProfessionScheme(BaseScheme):
@@ -39,36 +38,36 @@ class AppointmentCreateScheme(BaseScheme):
     doctor: Annotated[int, POS_INT]
     client: Annotated[int, POS_INT]
 
-    @validator('start_date_appointment')
-    def validate_start_date(cls, value, values):
-        if (
-            'end_date_appointment' in values
-            and value >= values['end_date_appointment']
-        ):
-            raise ValueError(
-                'start_date_appointment must be less than end_date_appointment'
-            )
-        if value <= datetime.now():
-            raise ValueError(
-                'start_date_appointment must be greater than the current date'
-            )
-        return value
+    # @validator('start_date_appointment')
+    # def validate_start_date(cls, value, values):
+    #     if (
+    #         'end_date_appointment' in values
+    #         and value >= values['end_date_appointment']
+    #     ):
+    #         raise ValueError(
+    #             'start_date_appointment must be less than end_date_appointment'
+    #         )
+    #     if value <= datetime.now():
+    #         raise ValueError(
+    #             'start_date_appointment must be greater than the current date'
+    #         )
+    #     return value
 
-    @validator('end_date_appointment')
-    def validate_end_date(cls, value, values):
-        if (
-            'start_date_appointment' in values
-            and value <= values['start_date_appointment']
-        ):
-            raise ValueError(
-                'end_date_appointment must be greater than start_date_appointment'
-            )
+    # @validator('end_date_appointment')
+    # def validate_end_date(cls, value, values):
+    #     if (
+    #         'start_date_appointment' in values
+    #         and value <= values['start_date_appointment']
+    #     ):
+    #         raise ValueError(
+    #             'end_date_appointment must be greater than start_date_appointment'
+    #         )
 
-        if value <= datetime.now():
-            raise ValueError(
-                'end_date_appointment must be greater than the current date'
-            )
-        return value
+    #     if value <= datetime.now():
+    #         raise ValueError(
+    #             'end_date_appointment must be greater than the current date'
+    #         )
+    #     return value
 
 
 class AppointmentDoctorInfoScheme(UserInfo):

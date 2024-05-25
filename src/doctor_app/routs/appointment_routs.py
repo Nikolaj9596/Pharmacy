@@ -60,14 +60,14 @@ async def get_retrieve(
     '/',
     tags=[TAG],
     summary='Создать запись на прием',
-    response_model=AppointmentScheme,
+    response_model=AppointmentCreateScheme,
 )
 async def create(
     service: Annotated[AppointmentService, Depends(appointment_service)],
     session: Annotated[AsyncSession, Depends(get_session)],
     data: AppointmentCreateScheme,
 ):
-    appointment: AppointmentScheme = await service.create(
+    appointment: AppointmentCreateScheme = await service.create(
         session=session, data=data
     )
     return appointment

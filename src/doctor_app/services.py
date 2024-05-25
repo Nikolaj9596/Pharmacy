@@ -8,6 +8,7 @@ from src.dependencies import Paginator, QueryParams, QueryParamsAppointment
 from src.doctor_app.dtos import (
     AppointmentData,
     AppointmentDataCreate,
+    AppointmentResponse,
     DoctorData,
     DoctorDataCreate,
     DoctorDetailData,
@@ -53,9 +54,9 @@ class DoctorService:
     async def get_by_id(
         self, id: int, session: AsyncSession
     ) -> DoctorDetailScheme:
-        doctor: Optional[
-            DoctorDetailData
-        ] = await self.repository.get_by_id(id=id, session=session)
+        doctor: Optional[DoctorDetailData] = await self.repository.get_by_id(
+            id=id, session=session
+        )
         if not doctor:
             raise NotFoundEx(detail=f'Doctor with id: {id} not found')
         return DoctorDetailScheme.model_validate(doctor)
@@ -74,7 +75,9 @@ class DoctorService:
         )
         if not doctors:
             return doctors
-        return [DoctorDetailScheme.model_validate(doctor) for doctor in doctors]
+        return [
+            DoctorDetailScheme.model_validate(doctor) for doctor in doctors
+        ]
 
     async def create(
         self, session: AsyncSession, data: DoctorCreateScheme
@@ -167,8 +170,8 @@ class AppointmentService:
             query_params=QueryParamsAppointment(
                 start_date=data.start_date_appointment,
                 end_date=data.end_date_appointment,
-                doctor=data.doctor_id,
-                client=data.client_id,
+                doctor=data.doctor,
+                client=data.client,
             ),
         )
         if appointments:
@@ -202,12 +205,13 @@ class AppointmentService:
         if not appointments:
             return appointments
         return [
-            AppointmentScheme.model_validate(appointment) for appointment in appointments
+            AppointmentScheme.model_validate(appointment)
+            for appointment in appointments
         ]
 
     async def create(
         self, session: AsyncSession, data: AppointmentCreateScheme
-    ) -> AppointmentScheme:
+    ) -> AppointmentCreateScheme:
         await self._check_related_doctor_exists(
             id=data.doctor, session=session
         )
@@ -216,10 +220,10 @@ class AppointmentService:
         )
         await self._check_doctor_is_busy(session=session, data=data)
 
-        appointment: AppointmentData = await self.repository.create(
+        appointment: AppointmentResponse = await self.repository.create(
             session=session, data=AppointmentDataCreate(**data.model_dump())
         )
-        return AppointmentScheme.model_validate(appointment)
+        return AppointmentCreateScheme.model_validate(dict(appointment))
 
     async def update(
         self, session: AsyncSession, data: AppointmentCreateScheme, id: int

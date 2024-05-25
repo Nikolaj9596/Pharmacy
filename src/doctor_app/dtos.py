@@ -43,6 +43,7 @@ class DoctorAppointmentInfo(TypedDict):
     first_name: str
     last_name: str
     middle_name: str
+    avatar: str
 
 
 class ClientAppointmentInfo(TypedDict):
@@ -50,6 +51,7 @@ class ClientAppointmentInfo(TypedDict):
     first_name: str
     last_name: str
     middle_name: str
+    avatar: str
 
 
 class AppointmentData(AppointmentDataCreate):

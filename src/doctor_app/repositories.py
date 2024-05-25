@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Any, Optional
 from sqlalchemy import text
 
@@ -81,7 +82,7 @@ class IDoctorAppointmentRepository(ABC):
     @abstractmethod
     async def create(
         self, data: AppointmentDataCreate, session: AsyncSession
-    ) -> AppointmentData:
+    ) -> AppointmentResponse:
         raise NotImplementedError()
 
     @abstractmethod
@@ -371,7 +372,7 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
             start_date_appointment=start_date_appointment,
             end_date_appointment=end_date_appointment,
             doctor=doctor,
-            client=client
+            client=client,
         )
 
     async def get_list(
@@ -400,19 +401,27 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
 
         if query_params.start_date and query_params.end_date:
             filter += ' WHERE m.start_date_appointment >= :start_date AND m.end_date_appointment <= :end_date'
-            params['start_date'] = query_params.start_date.strftime(
-                '%Y-%m-%dT%H:%M:%S'
+            params['start_date'] = datetime.fromisoformat(
+                query_params.start_date.strftime('%Y-%m-%dT%H:%M:%S')
             )
-            params['end_date'] = query_params.end_date.strftime(
-                '%Y-%m-%dT%H:%M:%S'
+            params['end_date'] = datetime.fromisoformat(
+                query_params.end_date.strftime('%Y-%m-%dT%H:%M:%S')
             )
 
-        if query_params.doctor:
+        if query_params.doctor and not filter:
             filter += ' WHERE m.doctor_id = :doctor_id '
             params['doctor_id'] = query_params.doctor
 
-        if query_params.doctor:
+        if query_params.doctor and filter:
+            filter += ' AND m.doctor_id = :doctor_id '
+            params['doctor_id'] = query_params.doctor
+
+        if query_params.doctor and not filter:
             filter += ' WHERE m.client_id = :client_id '
+            params['client_id'] = query_params.client
+
+        if query_params.doctor and filter:
+            filter += ' AND m.client_id = :client_id '
             params['client_id'] = query_params.client
 
         query = (
@@ -471,6 +480,14 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
             'VALUES(now(), now(), :start_date_appointment, :end_date_appointment, :doctor, :client) '
             'RETURNING id, created_at, updated_at, start_date_appointment, end_date_appointment, doctor_id, client_id '
         )
+
+        data['start_date_appointment'] = datetime.fromisoformat(
+            data['start_date_appointment'].strftime('%Y-%m-%dT%H:%M:%S')
+        )
+
+        data['end_date_appointment'] = datetime.fromisoformat(
+            data['end_date_appointment'].strftime('%Y-%m-%dT%H:%M:%S')
+        )
         result = await session.execute(query, dict(data))
         row = result.fetchone()
         if not row:
@@ -501,6 +518,14 @@ class DoctorAppointmentRepository(IDoctorAppointmentRepository):
         query = text(
             'UPDATE appointments SET  updated_at=now(), start_date_appointment=:start_date_appointment, end_date_appointment=:end_date_appointment, doctor_id=:doctor, client_id=:client '
             'WHERE id=:id RETURNING created_at, updated_at, start_date_appointment, end_date_appointment, doctor_id, client_id '
+        )
+
+        data['start_date_appointment'] = datetime.fromisoformat(
+            data['start_date_appointment'].strftime('%Y-%m-%dT%H:%M:%S')
+        )
+
+        data['end_date_appointment'] = datetime.fromisoformat(
+            data['end_date_appointment'].strftime('%Y-%m-%dT%H:%M:%S')
         )
         result = await session.execute(query, {'id': id, **data})
         row = result.fetchone()
