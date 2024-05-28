@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Optional
+import asyncio
 from sqlalchemy import text
 
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -10,6 +11,7 @@ from src.diagnosis_app.dtos import (
     CategoryDiseaseData,
     DiagnosisCreateData,
     DiagnosisData,
+    DiagnosisResponseData,
     DiseaseCreateData,
     DiseaseData,
 )
@@ -340,23 +342,56 @@ class DiagnosisRepository(IDiagnosisRepository):
         self, id: int, session: AsyncSession
     ) -> Optional[DiagnosisData]:
         query = text(
-            'SELECT d.name, d.description, d.date_closed, d.status, d.client_id, d.doctor_id '
-            'FROM diagnosis d '
-            'WHERE d.id=:id '
+            """
+            WITH disease_info AS (
+                SELECT
+                    id,
+                    json_agg(
+                        json_build_object(
+                            'id', dis.id,
+                            'name', dis.name
+                        )
+                    ) AS info 
+                FROM diseases
+                GROUP BY id
+            )
+            SELECT
+                dia.name,
+                dia.description,
+                dia.date_closed,
+                dia.status,
+                json_build_object('first_name', c.first_name, 'id', c.id, 'last_name', c.last_name, 'middle_name', c.middle_name, 'avatar', c.avatar) as client,
+                json_build_object('first_name', d.first_name, 'id', d.id, 'last_name', d.last_name, 'middle_name', d.middle_name, 'avatar', c.avatar) as doctor,
+                COALESCE(dis_info.info, '[]'::json) AS diseases
+            INNER JOIN doctors d ON dia.doctor_id = d.id
+            INNER JOIN clients c ON dia.client_id = c.id
+            INNER JOIN disease_diagnosis dis_dia ON dia.id = dis_dia.diagnosis_id
+            INNER JOIN disease_info dis_info ON dis_dia.disease_id = dis_info.id
+            WHERE dia.id = :id
+            """
         )
         result = await session.execute(query, {'id': id})
         row = result.first()
         if not row:
             return None
-        (name, description, date_closed, status, client_id, doctor_id) = row
+        (
+            name,
+            description,
+            date_closed,
+            status,
+            client,
+            doctor,
+            diseases,
+        ) = row
         return DiagnosisData(
             id=id,
             name=name,
             description=description,
             date_closed=date_closed,
             status=status,
-            client_id=client_id,
-            doctor_id=doctor_id,
+            client=client,
+            doctor=doctor,
+            disease=diseases,
         )
 
     async def get_list(
@@ -384,8 +419,32 @@ class DiagnosisRepository(IDiagnosisRepository):
             params['search'] = search
 
         query = (
-            'SELECT d.id, d.name, d.description, d.date_closed, d.status, d.client_id, d.doctor_id '
-            'FROM diagnosis d  '
+            """
+            WITH disease_info AS (
+                SELECT
+                    id,
+                    json_agg(
+                        json_build_object(
+                            'id', dis.id,
+                            'name', dis.name
+                        )
+                    ) AS info 
+                FROM diseases
+                GROUP BY id
+            )
+            SELECT
+                dia.name,
+                dia.description,
+                dia.date_closed,
+                dia.status,
+                json_build_object('first_name', c.first_name, 'id', c.id, 'last_name', c.last_name, 'middle_name', c.middle_name, 'avatar', c.avatar) as client,
+                json_build_object('first_name', d.first_name, 'id', d.id, 'last_name', d.last_name, 'middle_name', d.middle_name, 'avatar', c.avatar) as doctor,
+                COALESCE(dis_info.info, '[]'::json) AS diseases
+            INNER JOIN doctors d ON dia.doctor_id = d.id
+            INNER JOIN clients c ON dia.client_id = c.id
+            INNER JOIN disease_diagnosis dis_dia ON dia.id = dis_dia.diagnosis_id
+            INNER JOIN disease_info dis_info ON dis_dia.disease_id = dis_info.id
+            """
             f'{search}'
             f'{order}'
             'LIMIT :limit OFFSET :offset '
@@ -401,8 +460,9 @@ class DiagnosisRepository(IDiagnosisRepository):
                 description,
                 date_closed,
                 status,
-                client_id,
-                doctor_id,
+                client,
+                doctor,
+                diseases,
             ) = row
             diagnosis.append(
                 DiagnosisData(
@@ -411,8 +471,9 @@ class DiagnosisRepository(IDiagnosisRepository):
                     description=description,
                     date_closed=date_closed,
                     status=status,
-                    client_id=client_id,
-                    doctor_id=doctor_id,
+                    client=client,
+                    doctor=doctor,
+                    disease=diseases,
                 )
             )
         return diagnosis
@@ -425,17 +486,25 @@ class DiagnosisRepository(IDiagnosisRepository):
 
     async def create(
         self, data: DiagnosisCreateData, session: AsyncSession
-    ) -> DiagnosisData:
+    ) -> DiagnosisResponseData:
         query = text(
-            'INSERT INTO diagnosis(name, description, date_closed, status, client_id, doctor_id, created_at, updated_at) '
-            'VALUES(:name, :description, :date_closed, :status, :client_id, :doctor_id, now(), now()) '
-            'RETURNING id, name, description, date_closed, status, client_id, doctor_id '
+            """
+            INSERT INTO diagnosis(name, description, date_closed, status, client_id, doctor_id, created_at, updated_at)
+            VALUES(:name, :description, :date_closed, :status, :client, :doctor, now(), now())
+            RETURNING id, name, description, date_closed, status, client_id, doctor_id
+
+            """
+        )
+        query_insert_disease = text(
+            """
+            INSERT INTO disease_diagnosis(diagnosis_id, disease_id)
+            VALUES( :diagnosis_id, :disease_id)
+            """
         )
         result = await session.execute(query, dict(data))
         row = result.fetchone()
         if not row:
             raise BadRequestEx(detail='Failed to create a diagnosis')
-        await session.commit()
         (
             id,
             name,
@@ -445,22 +514,33 @@ class DiagnosisRepository(IDiagnosisRepository):
             client_id,
             doctor_id,
         ) = row
-        return DiagnosisData(
+        await asyncio.gather(
+            *[
+                session.execute(
+                    query_insert_disease,
+                    {'diagnosis_id': id, 'disease_id': disease_id},
+                )
+                for disease_id in data['disease']
+            ]
+        )
+        await session.commit()
+        return DiagnosisResponseData(
             id=id,
             name=name,
             description=description,
             date_closed=date_closed,
             status=status,
-            client_id=client_id,
-            doctor_id=doctor_id,
+            client=client_id,
+            doctor=doctor_id,
+            disease=data['disease']
         )
 
     async def update(
         self, id: int, data: DiagnosisCreateData, session: AsyncSession
-    ) -> DiagnosisData:
+    ) -> DiagnosisResponseData:
         query = text(
             'UPDATE diagnosis SET  updated_at=now(), name=:name, description=:description, date_closed=:date_closed, status=:status, client_id=:client_id, doctor_id=:doctor_id '
-            'WHERE id=:id RETURNING name, description, date_closed, status, client_id, doctor_id '
+            'WHERE id=:id RETURNING name, description, date_closed, status, client, doctor '
         )
         result = await session.execute(query, {'id': id, **data})
         row = result.fetchone()
@@ -468,12 +548,13 @@ class DiagnosisRepository(IDiagnosisRepository):
             raise BadRequestEx(detail='Failed to update a diagnosis')
         (name, description, date_closed, status, client_id, doctor_id) = row
         await session.commit()
-        return DiagnosisData(
+        return DiagnosisResponseData(
             id=id,
             name=name,
             description=description,
             date_closed=date_closed,
             status=status,
-            client_id=client_id,
-            doctor_id=doctor_id,
+            client=client_id,
+            doctor=doctor_id,
+            disease=data['disease']
         )

@@ -199,7 +199,7 @@ class DiagnosisService:
         self, id: int, session: AsyncSession
     ) -> bool:
 
-        query = text('SELECT c.id FROM client c WHERE c.id=:id')
+        query = text('SELECT c.id FROM clients c WHERE c.id=:id')
         result = await session.execute(query, {'id': id})
         row = result.first()
         if not row:
@@ -210,7 +210,7 @@ class DiagnosisService:
         self, id: int, session: AsyncSession
     ) -> bool:
 
-        query = text('SELECT d.id FROM doctor d WHERE d.id=:id')
+        query = text('SELECT d.id FROM doctors d WHERE d.id=:id')
         result = await session.execute(query, {'id': id})
         row = result.first()
         if not row:
@@ -245,26 +245,26 @@ class DiagnosisService:
 
     async def create(
         self, session: AsyncSession, data: DiagnosisCreateScheme
-    ) -> DiagnosisScheme:
-        await self._check_client_exists(id=data.client_id, session=session)
-        await self._check_doctor_exists(id=data.doctor_id, session=session)
+    ) -> DiagnosisCreateScheme:
+        await self._check_client_exists(id=data.client, session=session)
+        await self._check_doctor_exists(id=data.doctor, session=session)
         diagnosis: DiagnosisData = await self.repository.create(
             session=session, data=DiagnosisCreateData(**data.model_dump())
         )
-        return DiagnosisScheme.model_validate(diagnosis)
+        return DiagnosisCreateScheme.model_validate(diagnosis)
 
     async def update(
         self, session: AsyncSession, data: DiagnosisCreateScheme, id: int
-    ) -> DiagnosisScheme:
+    ) -> DiagnosisCreateScheme:
         await self._check_exists(id=id, session=session)
-        await self._check_client_exists(id=data.client_id, session=session)
-        await self._check_doctor_exists(id=data.doctor_id, session=session)
+        await self._check_client_exists(id=data.client, session=session)
+        await self._check_doctor_exists(id=data.doctor, session=session)
         diagnosis = await self.repository.update(
             session=session,
             data=DiagnosisCreateData(**data.model_dump()),
             id=id,
         )
-        return DiagnosisScheme.model_validate(diagnosis)
+        return DiagnosisCreateScheme.model_validate(diagnosis)
 
     async def delete(self, id: int, session: AsyncSession) -> None:
         await self._check_exists(id=id, session=session)

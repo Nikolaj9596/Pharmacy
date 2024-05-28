@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Annotated, Optional
 
+from src.doctor_app.schemes import UserInfo
 from src.models import BaseScheme
 
 from src.types import STR_255
@@ -27,15 +28,21 @@ class DiseaseScheme(DiseaseCreateScheme):
     id: int
     category_disease: CategoryDiseaseScheme
 
+class DiseaseShortScheme(BaseScheme):
+    ip: int
+    name: str
 
 class DiagnosisCreateScheme(BaseScheme):
     name: Annotated[str, STR_255]
     description: Optional[str]
     status: str
-    client_id: int
-    doctor_id: int
+    client: int
+    doctor: int
     date_closed: Optional[datetime]
-
+    disease: list[int] 
 
 class DiagnosisScheme(DiagnosisCreateScheme):
     id: int
+    client: UserInfo
+    doctor: UserInfo
+    disease: list[DiseaseShortScheme]

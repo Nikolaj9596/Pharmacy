@@ -2,6 +2,13 @@ from datetime import datetime
 from typing import Optional, TypedDict
 
 
+class UserData(TypedDict):
+    first_name: str
+    last_name: str
+    middle_name: str
+    avatar: str
+
+
 class CategoryDiseaseCreateData(TypedDict):
     name: str
 
@@ -25,10 +32,22 @@ class DiagnosisCreateData(TypedDict):
     name: str
     description: Optional[str]
     status: str
-    client_id: int
-    doctor_id: int
+    client: int
+    doctor: int
     date_closed: Optional[datetime]
+    disease: list[int]
 
+
+class ShortDiseaseData(TypedDict):
+    id: int
+    name: str
+
+
+class DiagnosisResponseData(DiagnosisCreateData):
+    id: int
 
 class DiagnosisData(DiagnosisCreateData):
     id: int
+    disease: list[ShortDiseaseData]
+    client: UserData
+    doctor: UserData
