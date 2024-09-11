@@ -34,7 +34,6 @@ class DiagnosisCreateData(TypedDict):
     status: str
     client: int
     doctor: int
-    date_closed: Optional[datetime]
     disease: list[int]
 
 
@@ -48,6 +47,6 @@ class DiagnosisResponseData(DiagnosisCreateData):
 
 class DiagnosisData(DiagnosisCreateData):
     id: int
-    disease: list[ShortDiseaseData]
-    client: UserData
-    doctor: UserData
+    disease: list[ShortDiseaseData] | list[int]
+    client: UserData | int
+    doctor: UserData | int

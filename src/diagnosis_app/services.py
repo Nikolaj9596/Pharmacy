@@ -33,23 +33,19 @@ class CategoryDiseaseService:
     async def _check_exists(
         self, id: int, session: AsyncSession
     ) -> CategoryDiseaseData:
-        category_disease: Optional[
-            CategoryDiseaseData
-        ] = await self.repository.get_by_id(id=id, session=session)
+        category_disease: Optional[CategoryDiseaseData] = (
+            await self.repository.get_by_id(id=id, session=session)
+        )
         if not category_disease:
-            raise NotFoundEx(
-                detail=f'Category Disease with id: {id} not found'
-            )
+            raise NotFoundEx(detail=f"Category Disease with id: {id} not found")
         return category_disease
 
-    async def get_by_id(
-        self, id: int, session: AsyncSession
-    ) -> CategoryDiseaseScheme:
-        category: Optional[
-            CategoryDiseaseData
-        ] = await self.repository.get_by_id(id=id, session=session)
+    async def get_by_id(self, id: int, session: AsyncSession) -> CategoryDiseaseScheme:
+        category: Optional[CategoryDiseaseData] = await self.repository.get_by_id(
+            id=id, session=session
+        )
         if not category:
-            raise NotFoundEx(detail=f'CategoryDisease with id: {id} not found')
+            raise NotFoundEx(detail=f"CategoryDisease with id: {id} not found")
         return CategoryDiseaseScheme(**category)
 
     async def get_list(
@@ -58,9 +54,7 @@ class CategoryDiseaseService:
         pagination: Paginator,
         query_params: QueryParams,
     ) -> list[CategoryDiseaseScheme] | list:
-        categories: list[
-            CategoryDiseaseScheme
-        ] | list = await self.repository.get_list(
+        categories: list[CategoryDiseaseScheme] | list = await self.repository.get_list(
             session=session,
             limit=pagination.limit,
             offset=pagination.offset,
@@ -68,7 +62,9 @@ class CategoryDiseaseService:
         )
         if not categories:
             return categories
-        return [CategoryDiseaseScheme(**category) for category in categories]
+        return [
+            CategoryDiseaseScheme.model_validate(category) for category in categories
+        ]
 
     async def create(
         self, session: AsyncSession, data: CategoryDiseaseCreateScheme
@@ -93,7 +89,7 @@ class CategoryDiseaseService:
         await self._check_exists(id=id, session=session)
         deleted = await self.repository.delete(session=session, id=id)
         if not deleted:
-            raise BadRequestEx(detail='Failed to delete a category disease')
+            raise BadRequestEx(detail="Failed to delete a category disease")
         return None
 
 
@@ -101,27 +97,21 @@ class DiseaseService:
     def __init__(self, repository: IDiseaseRepository):
         self.repository = repository
 
-    async def _check_exists(
-        self, id: int, session: AsyncSession
-    ) -> DiseaseData:
+    async def _check_exists(self, id: int, session: AsyncSession) -> DiseaseData:
         disease: Optional[DiseaseData] = await self.repository.get_by_id(
             id=id, session=session
         )
         if not disease:
-            raise NotFoundEx(detail=f'Disease with id: {id} not found')
+            raise NotFoundEx(detail=f"Disease with id: {id} not found")
         return disease
 
-    async def _check_category_exists(
-        self, id: int, session: AsyncSession
-    ) -> bool:
+    async def _check_category_exists(self, id: int, session: AsyncSession) -> bool:
 
-        query = text('SELECT cd.id FROM categories_disease cd WHERE cd.id=:id')
-        result = await session.execute(query, {'id': id})
+        query = text("SELECT cd.id FROM categories_disease cd WHERE cd.id=:id")
+        result = await session.execute(query, {"id": id})
         row = result.first()
         if not row:
-            raise NotFoundEx(
-                detail=f'Category Disease with id: {id} not found'
-            )
+            raise NotFoundEx(detail=f"Category Disease with id: {id} not found")
         return True
 
     async def get_by_id(self, id: int, session: AsyncSession) -> DiseaseScheme:
@@ -129,8 +119,8 @@ class DiseaseService:
             id=id, session=session
         )
         if not disease:
-            raise NotFoundEx(detail=f'Disease with id: {id} not found')
-        return DiseaseScheme(**disease)
+            raise NotFoundEx(detail=f"Disease with id: {id} not found")
+        return DiseaseScheme.model_validate(disease)
 
     async def get_list(
         self,
@@ -150,10 +140,8 @@ class DiseaseService:
 
     async def create(
         self, session: AsyncSession, data: DiseaseCreateScheme
-    ) -> DiseaseScheme:
-        await self._check_category_exists(
-            id=data.category_disease, session=session
-        )
+    ) -> DiseaseResponseScheme:
+        await self._check_category_exists(id=data.category_disease, session=session)
         disease: DiseaseData = await self.repository.create(
             session=session, data=DiseaseCreateData(**data.model_dump())
         )
@@ -163,9 +151,7 @@ class DiseaseService:
         self, session: AsyncSession, data: DiseaseCreateScheme, id: int
     ) -> DiseaseScheme:
         await self._check_exists(id=id, session=session)
-        await self._check_category_exists(
-            id=data.category_disease, session=session
-        )
+        await self._check_category_exists(id=data.category_disease, session=session)
         disease = await self.repository.update(
             session=session,
             data=DiseaseCreateData(**data.model_dump()),
@@ -177,7 +163,7 @@ class DiseaseService:
         await self._check_exists(id=id, session=session)
         deleted = await self.repository.delete(session=session, id=id)
         if not deleted:
-            raise BadRequestEx(detail='Failed to delete a disease')
+            raise BadRequestEx(detail="Failed to delete a disease")
         return None
 
 
@@ -185,46 +171,38 @@ class DiagnosisService:
     def __init__(self, repository: IDiagnosisRepository):
         self.repository = repository
 
-    async def _check_exists(
-        self, id: int, session: AsyncSession
-    ) -> DiagnosisData:
+    async def _check_exists(self, id: int, session: AsyncSession) -> DiagnosisData:
         diagnosis: Optional[DiagnosisData] = await self.repository.get_by_id(
             id=id, session=session
         )
         if not diagnosis:
-            raise NotFoundEx(detail=f'Diagnosis with id: {id} not found')
+            raise NotFoundEx(detail=f"Diagnosis with id: {id} not found")
         return diagnosis
 
-    async def _check_client_exists(
-        self, id: int, session: AsyncSession
-    ) -> bool:
+    async def _check_client_exists(self, id: int, session: AsyncSession) -> bool:
 
-        query = text('SELECT c.id FROM clients c WHERE c.id=:id')
-        result = await session.execute(query, {'id': id})
+        query = text("SELECT c.id FROM clients c WHERE c.id=:id")
+        result = await session.execute(query, {"id": id})
         row = result.first()
         if not row:
-            raise NotFoundEx(detail=f'Client with id: {id} not found')
+            raise NotFoundEx(detail=f"Client with id: {id} not found")
         return True
 
-    async def _check_doctor_exists(
-        self, id: int, session: AsyncSession
-    ) -> bool:
+    async def _check_doctor_exists(self, id: int, session: AsyncSession) -> bool:
 
-        query = text('SELECT d.id FROM doctors d WHERE d.id=:id')
-        result = await session.execute(query, {'id': id})
+        query = text("SELECT d.id FROM doctors d WHERE d.id=:id")
+        result = await session.execute(query, {"id": id})
         row = result.first()
         if not row:
-            raise NotFoundEx(detail=f'Doctor with id: {id} not found')
+            raise NotFoundEx(detail=f"Doctor with id: {id} not found")
         return True
 
-    async def get_by_id(
-        self, id: int, session: AsyncSession
-    ) -> DiagnosisScheme:
+    async def get_by_id(self, id: int, session: AsyncSession) -> DiagnosisScheme:
         diagnosis: Optional[DiagnosisData] = await self.repository.get_by_id(
             id=id, session=session
         )
         if not diagnosis:
-            raise NotFoundEx(detail=f'Disease with id: {id} not found')
+            raise NotFoundEx(detail=f"Disease with id: {id} not found")
         return DiagnosisScheme(**diagnosis)
 
     async def get_list(
@@ -251,7 +229,7 @@ class DiagnosisService:
         diagnosis: DiagnosisData = await self.repository.create(
             session=session, data=DiagnosisCreateData(**data.model_dump())
         )
-        return DiagnosisCreateScheme.model_validate(diagnosis)
+        return DiagnosisCreateScheme(**diagnosis)
 
     async def update(
         self, session: AsyncSession, data: DiagnosisCreateScheme, id: int
@@ -270,5 +248,5 @@ class DiagnosisService:
         await self._check_exists(id=id, session=session)
         deleted = await self.repository.delete(session=session, id=id)
         if not deleted:
-            raise BadRequestEx(detail='Failed to delete a diagnosis')
+            raise BadRequestEx(detail="Failed to delete a diagnosis")
         return None

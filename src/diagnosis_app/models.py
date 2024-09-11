@@ -1,4 +1,5 @@
 __all__ = ['Diagnosis', 'DiseaseDiagnosis']
+
 from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -34,6 +35,7 @@ class Diagnosis(Base):
 class DiseaseDiagnosis(Base):
     __tablename__ = 'disease_diagnosis'
 
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     disease_id: Mapped[int] = mapped_column(
         ForeignKey('diseases.id', ondelete='CASCADE'), primary_key=True
     )

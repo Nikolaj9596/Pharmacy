@@ -54,7 +54,7 @@ class DoctorService:
     async def get_by_id(
         self, id: int, session: AsyncSession
     ) -> DoctorDetailScheme:
-        doctor: Optional[DoctorDetailData] = await self.repository.get_by_id(
+        doctor: Optional[DoctorData] = await self.repository.get_by_id(
             id=id, session=session
         )
         if not doctor:

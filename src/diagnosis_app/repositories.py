@@ -352,7 +352,7 @@ class DiagnosisRepository(IDiagnosisRepository):
                             'name', dis.name
                         )
                     ) AS info 
-                FROM diseases
+                FROM diseases dis
                 GROUP BY id
             )
             SELECT
@@ -363,10 +363,11 @@ class DiagnosisRepository(IDiagnosisRepository):
                 json_build_object('first_name', c.first_name, 'id', c.id, 'last_name', c.last_name, 'middle_name', c.middle_name, 'avatar', c.avatar) as client,
                 json_build_object('first_name', d.first_name, 'id', d.id, 'last_name', d.last_name, 'middle_name', d.middle_name, 'avatar', c.avatar) as doctor,
                 COALESCE(dis_info.info, '[]'::json) AS diseases
-            INNER JOIN doctors d ON dia.doctor_id = d.id
-            INNER JOIN clients c ON dia.client_id = c.id
-            INNER JOIN disease_diagnosis dis_dia ON dia.id = dis_dia.diagnosis_id
-            INNER JOIN disease_info dis_info ON dis_dia.disease_id = dis_info.id
+            FROM diagnosis dia
+            JOIN doctors d ON dia.doctor_id = d.id
+            JOIN clients c ON dia.client_id = c.id
+            JOIN disease_diagnosis dis_dia ON dia.id = dis_dia.diagnosis_id
+            JOIN disease_info dis_info ON dis_dia.disease_id = dis_info.id
             WHERE dia.id = :id
             """
         )
@@ -429,10 +430,11 @@ class DiagnosisRepository(IDiagnosisRepository):
                             'name', dis.name
                         )
                     ) AS info 
-                FROM diseases
+                FROM diseases as dis
                 GROUP BY id
             )
             SELECT
+                dia.id,
                 dia.name,
                 dia.description,
                 dia.date_closed,
@@ -440,6 +442,7 @@ class DiagnosisRepository(IDiagnosisRepository):
                 json_build_object('first_name', c.first_name, 'id', c.id, 'last_name', c.last_name, 'middle_name', c.middle_name, 'avatar', c.avatar) as client,
                 json_build_object('first_name', d.first_name, 'id', d.id, 'last_name', d.last_name, 'middle_name', d.middle_name, 'avatar', c.avatar) as doctor,
                 COALESCE(dis_info.info, '[]'::json) AS diseases
+            FROM diagnosis as dia
             INNER JOIN doctors d ON dia.doctor_id = d.id
             INNER JOIN clients c ON dia.client_id = c.id
             INNER JOIN disease_diagnosis dis_dia ON dia.id = dis_dia.diagnosis_id
@@ -489,18 +492,24 @@ class DiagnosisRepository(IDiagnosisRepository):
     ) -> DiagnosisResponseData:
         query = text(
             """
-            INSERT INTO diagnosis(name, description, date_closed, status, client_id, doctor_id, created_at, updated_at)
-            VALUES(:name, :description, :date_closed, :status, :client, :doctor, now(), now())
-            RETURNING id, name, description, date_closed, status, client_id, doctor_id
+            INSERT INTO diagnosis(
+                name, description,
+                status, client_id,
+                doctor_id, created_at, updated_at)
+            VALUES(:name, :description, :status, :client, :doctor, now(), now())
+            RETURNING id, name, description, status, client_id, doctor_id
 
             """
         )
         query_insert_disease = text(
             """
-            INSERT INTO disease_diagnosis(diagnosis_id, disease_id)
-            VALUES( :diagnosis_id, :disease_id)
+            INSERT INTO disease_diagnosis(
+                diagnosis_id, disease_id, 
+                created_at, updated_at)
+            VALUES( :diagnosis_id, :disease_id, now(), now())
             """
         )
+        data['status'] = data['status'].upper()
         result = await session.execute(query, dict(data))
         row = result.fetchone()
         if not row:
@@ -509,26 +518,22 @@ class DiagnosisRepository(IDiagnosisRepository):
             id,
             name,
             description,
-            date_closed,
             status,
             client_id,
             doctor_id,
         ) = row
-        await asyncio.gather(
-            *[
-                session.execute(
-                    query_insert_disease,
-                    {'diagnosis_id': id, 'disease_id': disease_id},
-                )
-                for disease_id in data['disease']
-            ]
-        )
+
+        await session.commit()
+        for disease_id in data['disease']:
+           await session.execute(
+                query_insert_disease,
+                {'diagnosis_id': id, 'disease_id': disease_id},
+            )
         await session.commit()
         return DiagnosisResponseData(
             id=id,
             name=name,
             description=description,
-            date_closed=date_closed,
             status=status,
             client=client_id,
             doctor=doctor_id,
@@ -539,20 +544,19 @@ class DiagnosisRepository(IDiagnosisRepository):
         self, id: int, data: DiagnosisCreateData, session: AsyncSession
     ) -> DiagnosisResponseData:
         query = text(
-            'UPDATE diagnosis SET  updated_at=now(), name=:name, description=:description, date_closed=:date_closed, status=:status, client_id=:client_id, doctor_id=:doctor_id '
-            'WHERE id=:id RETURNING name, description, date_closed, status, client, doctor '
+            'UPDATE diagnosis SET  updated_at=now(), name=:name, description=:description, status=:status, client_id=:client_id, doctor_id=:doctor_id '
+            'WHERE id=:id RETURNING name, description, status, client, doctor '
         )
         result = await session.execute(query, {'id': id, **data})
         row = result.fetchone()
         if not row:
             raise BadRequestEx(detail='Failed to update a diagnosis')
-        (name, description, date_closed, status, client_id, doctor_id) = row
+        (name, description, status, client_id, doctor_id) = row
         await session.commit()
         return DiagnosisResponseData(
             id=id,
             name=name,
             description=description,
-            date_closed=date_closed,
             status=status,
             client=client_id,
             doctor=doctor_id,

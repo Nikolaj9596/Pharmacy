@@ -29,7 +29,7 @@ class DiseaseScheme(DiseaseCreateScheme):
     category_disease: CategoryDiseaseScheme
 
 class DiseaseShortScheme(BaseScheme):
-    ip: int
+    id: int
     name: str
 
 class DiagnosisCreateScheme(BaseScheme):
@@ -38,7 +38,6 @@ class DiagnosisCreateScheme(BaseScheme):
     status: str
     client: int
     doctor: int
-    date_closed: Optional[datetime]
     disease: list[int] 
 
 class DiagnosisScheme(DiagnosisCreateScheme):

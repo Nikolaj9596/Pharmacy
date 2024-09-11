@@ -4,7 +4,7 @@ x-logging-common: &logging-common
   logging:
     options:
       max-size: "10m"
-      max-file: "3"
+      max-file: "4"
 
 services:
   db:

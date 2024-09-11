@@ -48,7 +48,7 @@ async def get_retrieve(
     '/',
     tags=[TAG],
     summary='Создать диагноз',
-    response_model=DiagnosisScheme,
+    response_model=DiagnosisCreateScheme,
 )
 async def create(
     service: Annotated[DiagnosisService, Depends(diagnosis_service)],
